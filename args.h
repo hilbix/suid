@@ -7,18 +7,42 @@
 struct args
   {
     int		n, max;
-    const char	**args;
+    char	**args;
   };
 
 static void
-args_add(struct args *a, const char *s)
+args_add(struct args *a, char *s)
 {
   if (a->max <= a->n+1)
     {
       a->max += a->max + a->n + 2;
-      a->args = realloc(a->args, a->max * sizeof *a->args);
-      if (!a->args)
-	OOPS("out of memory", NULL);
+      a->args = re_alloc(a->args, a->max * sizeof *a->args);
     }
+  a->args[a->n]		= s;
+  a->args[++a->n]	= 0;
+}
+
+static void
+args_addf(struct args *a, const char *s, ...)
+{
+  char	*buf;
+  int	n, k;
+
+  buf	= 0;
+  for (n=BUFSIZ;; n+=k)
+    {
+      va_list	list;
+
+      buf	= re_alloc(buf, n);
+      va_start(list, s);
+      k = vsnprintf(buf, n, s, list);
+      va_end(list);
+      if (k<n)
+	break;
+    }
+  k = strlen(buf);
+  if (k+1<n)
+    buf = re_alloc(buf, k+1);
+  args_add(a, buf);
 }
 

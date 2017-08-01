@@ -1,6 +1,6 @@
 # SUID
 
-Inverse to `sudo`.
+Somewhat an inverse to `sudo`.
 
 
 ## Usage
@@ -8,7 +8,7 @@ Inverse to `sudo`.
     git clone https://github.com/hilbix/suid.git
     cd suid
     make
-    make install
+    sudo make install
 
 Afterwards you can run something as
 
@@ -17,26 +17,9 @@ Afterwards you can run something as
 `suid` is inverse to `sudo` in the sense, that `sudo` is `user->command`, where `suid` is `command->user`.
 
 
-## Configuration
+## Configuration and environment
 
-You need a file named `/etc/suid.conf` which is in `/etc/passwd` like format:
-
-    command:pw:user:group:min-maxargs:/path/to/binary args..
-
-- `command` must not contain a `:` and is the first argument
-- `pw` is a dummy and must be empty today.
-- `user` is the user to change to.  If empty, the user is not changed.
-- `group` is the group to change to.  If empty, the group is not changed.
-- `min-max` are the minimum and maximum arguments allowed.  The default is `0-0`.  It may change in a compatible way in future if more flags need to be added.
-
-
-## Environment
-
-Following variables are populated in the called environment:
-
-- `SUID_ORIG_USER` the original `USER` variable
-- `SUID_ORIG_UID` the original `UID`
-- `SUID_ORIG_PID` the original `PID`
+See `suid.conf` sample file.
 
 
 ## FAQ
@@ -47,7 +30,7 @@ Why not `sudo`?
 
 - I hate it to use `sudo` to allow users to do things on system level.  Also the `sudoers` file syntax is far from intuitive.  It is far more easy to just invoke a command, and enable the command to sort it out.
 
-- This here is very easy to use.
+- This here is very easy to use, as it does not involve passwords (for now).
 
 
 Is this secure?

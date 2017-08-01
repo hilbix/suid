@@ -103,9 +103,19 @@ OOPS(const char *bug, ...)
       writes(2, s);
     }
   va_end(list);
+  writes(2, ": ");
   writes(2, strerror(e));
   writes(2, "\n");
   exit(23);	/* 23 Nicht ist so wie es scheint	*/
+}
+
+static void *
+re_alloc(void *buf, size_t len)
+{
+  buf	= realloc(buf, len);
+  if (!buf)
+    OOPS("out of memory", NULL);
+  return buf;
 }
 
 static int

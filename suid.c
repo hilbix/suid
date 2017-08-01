@@ -11,7 +11,10 @@
 #include <grp.h>
 
 #define	CONF	"/etc/suid.conf"
+#define	PATH	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
+/* Get next column
+ */
 static char *
 next(char *s)
 {
@@ -24,15 +27,35 @@ next(char *s)
   return ptr;
 }
 
+/* Prepare SUID environment
+ */
+static void
+populate_env(struct args *env, int uid, int gid, const char *cwd)
+{
+  char	**p, *s;
+
+  args_add(env, PATH);
+  if ((s=getenv("TERM"))!=0)
+    args_addf(env, "TERM=%s", s);
+  args_addf(env, "SUIDUID=%d", uid);
+  args_addf(env, "SUIDGID=%d", gid);
+  if (cwd)
+    args_addf(env, "SUIDPWD=%s", cwd);
+  for (p=environ; *p; p++)
+    args_addf(env, "SUID_%s", *p);
+}
+
+/* This routine is too long
+ */
 int
 main(int argc, char **argv)
 {
   struct linereader	l = { -1 };
-  struct args		args = { 0 };
-  char			*cmd, *pwd, *user, *group, *minmax, *line;
-  int			uid, gid;
+  struct args		args = { 0 }, env = { 0 };
+  char			*cmd, *pass, *user, *group, *minmax, *dir, *line, *cwd;
+  int			uid, gid, ouid, ogid;
   struct passwd		*pw;
-  int			i, minarg, maxarg;
+  int			i, minarg, maxarg, debug;
 
   if (argc<2)
     {
@@ -46,28 +69,50 @@ main(int argc, char **argv)
 
   l.name = CONF;
 
-  do
+  for (;;)
     {
       if ((line = linereader(&l))==0)
 	{
 	  /* Avoid to print user defined parameters, so not output argv[1] here	*/
           OOPS(CONF, linereader_end(&l) ? "read error" : "command not found", NULL);
 	}
+      if (*line == '#' || !*line)
+	continue;
 
-      pwd	= next(line);
-    } while (strcmp(cmd, line));
+      pass	= next(line);
+      if (!strcmp(cmd, line))
+	break;
+    }
 
   /* command:pw:user:group:minmax:/path/to/binary args..
    */
-  user	= next(pwd);
+  user	= next(pass);
   group	= next(user);
   minmax= next(group);
-  line	= next(minmax);
+  dir	= next(minmax);
+  line	= next(dir);
+
+  if (*pass)
+    OOPS(CONF, cmd, "pw not yet supported", pass, NULL);
+
+  debug = 0;
+  if (*minmax == 'D')
+    {
+      minmax++;
+      debug = 1;
+    }
+
+  cwd	= getcwd(NULL, 0);
+  if (!cwd)
+    OOPS("cannot get current working directory", NULL);
+
+  ouid	= getuid();
+  ogid	= getgid();
 
   if (!*user)
-    pw	= getpwuid(getuid());
-  else if (!strcmp(user, "*"))
     pw	= getpwuid(geteuid());
+  else if (!strcmp(user, "*"))
+    pw	= getpwuid(ouid);
   else if (getint(user, &uid))
     pw	= getpwuid(uid);
   else
@@ -79,9 +124,9 @@ main(int argc, char **argv)
   uid	= pw->pw_uid;
 
   if (!*group)
-    gid	= getgid();
+    gid	= getegid();
   else if (!strcmp(group, "*"))
-    gid = getegid();
+    gid = ogid;
   else if (!strcmp(group, "="))
     gid	= pw->pw_gid;
   else if (!getint(group, &gid))
@@ -109,25 +154,36 @@ main(int argc, char **argv)
     OOPS(CONF, cmd, "wrong minmax", minmax, NULL);
  
   if (argc-2<minarg || (maxarg>=0 && argc-2>maxarg))
-    OOPS(CONF, cmd, "wront number of arguments", NULL);
+    OOPS(CONF, cmd, "wrong number of arguments", NULL);
 
   for (;;)
     {
       args_add(&args, line);
-      line	= strchr(line, ' ');
+      line	= strchr(line, ':');
       if (!line)
 	break;
       *line++	= 0;
-      while (*line==' ')
-	line++;
-      if (!*line)
-	break;
     }
   for (i=1; ++i<argc; )
     args_add(&args, argv[i]);
 
-  execv(argv[0], argv);
-  perror(argv[0]);
+  if (debug)
+    {
+      fprintf(stderr, "cmd:  %s\n", cmd);
+      fprintf(stderr, "uid:  %d\n", uid);
+      fprintf(stderr, "gid:  %d\n", gid);
+      fprintf(stderr, "args: %d - %d\n", minarg, maxarg);
+      fprintf(stderr, "dir:  %s\n", dir);
+      for (i=0; args.args[i]; i++)
+        printf("%4d: %s\n", i, args.args[i]);
+    }
+
+  populate_env(&env, ouid, ogid, cwd);
+  if (*dir && chdir(dir))
+    OOPS(dir, "cannot change directory", NULL);
+
+  execve(args.args[0], args.args, env.args);
+  OOPS("execve() failed", args.args[0], NULL);
   return 127;	/* resemble shell	*/
 }
 
