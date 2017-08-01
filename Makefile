@@ -19,7 +19,7 @@ install: $(PROGS)
 	cp -f $(PROGS) '$(INSTPATH)/'
 	cd '$(INSTPATH)' && chown root:root $(PROGS)
 	cd '$(INSTPATH)' && chmod 4555 $(PROGS)
-	if [ -f '/etc/$(CONF)' ]; then cp -v '$(CONF)' '/etc/$(CONF).dist'; else cp -v '$(CONF)' '/etc/$(CONF)'; fi
+	if [ -f '/etc/$(CONF)' ]; then install -m700 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m700 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
 
 .PHONY: clean distclean
 clean distclean:
