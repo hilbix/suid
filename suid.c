@@ -40,12 +40,12 @@ shellshock(const char *s)
 /* Prepare SUID environment
  */
 static void
-populate_env(struct args *env, int uid, int gid, const char *cwd)
+populate_env(struct args *env, int no_shellshock, int uid, int gid, const char *cwd)
 {
   char	**p, *s;
 
   args_add(env, PATH);
-  if ((s=getenv("TERM"))!=0 && !shellshock(s))
+  if ((s=getenv("TERM"))!=0 && (no_shellshock || !shellshock(s)))
     args_addf(env, "TERM=%s", s);
   args_addf(env, "SUIDUID=%d", uid);
   args_addf(env, "SUIDGID=%d", gid);
@@ -54,9 +54,25 @@ populate_env(struct args *env, int uid, int gid, const char *cwd)
   for (p=environ; *p; p++)
     {
       s	= strchr(*p, '=');
-      if (s && !shellshock(s+1))
+      if (s && (no_shellshock || !shellshock(s+1)))
         args_addf(env, "SUID_%s", *p);
     }
+}
+
+static char *
+find_cmd(struct linereader *l, const char *cmd)
+{
+  char	*line, *pass;
+
+  while ((line = linereader(l))!=0)
+    {
+      if (*line == '#' || !*line)
+	continue;
+      pass	= next(line);
+      if (!strcmp(cmd, line))
+	return pass;
+    }
+  return 0;
 }
 
 /* This routine is too long
@@ -69,7 +85,7 @@ main(int argc, char **argv)
   char			*cmd, *pass, *user, *group, *minmax, *dir, *line, *cwd;
   int			uid, gid, ouid, ogid;
   struct passwd		*pw;
-  int			i, minarg, maxarg, debug;
+  int			i, minarg, maxarg, debug, no_shellshock;
 
   if (argc<2)
     {
@@ -80,7 +96,7 @@ main(int argc, char **argv)
 	   "\tcommand:pw:user:grp:minmax:dir:/path/to/binary:args..\n"
 	   "\tpw:       currently must be empty ('')\n"
 	   "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
-	   "\tminmax:   [D][minargs][-[maxargs]]"
+	   "\tminmax:   [D][S][minargs][-[maxargs]]"
            , NULL);
     }
 
@@ -89,20 +105,10 @@ main(int argc, char **argv)
     OOPS("command must not contain '/'", NULL);
 
   l.name = CONF;
-
-  for (;;)
+  if ((pass = find_cmd(&l, cmd))==0)
     {
-      if ((line = linereader(&l))==0)
-	{
-	  /* Avoid to print user defined parameters, so not output argv[1] here	*/
-          OOPS(CONF, linereader_end(&l) ? "read error" : "command not found", NULL);
-	}
-      if (*line == '#' || !*line)
-	continue;
-
-      pass	= next(line);
-      if (!strcmp(cmd, line))
-	break;
+      /* Avoid to print user defined parameters, so not output argv[1] here	*/
+      OOPS(CONF, linereader_end(&l) ? "read error" : "command not found", NULL);
     }
 
   /* command:pw:user:group:minmax:/path/to/binary args..
@@ -117,10 +123,16 @@ main(int argc, char **argv)
     OOPS(CONF, cmd, "pw not yet supported", pass, NULL);
 
   debug = 0;
+  no_shellshock = 0;
   if (*minmax == 'D')
     {
       minmax++;
       debug = 1;
+    }
+  if (*minmax == 'S')
+    {
+      minmax++;
+      no_shellshock = 1;
     }
 
   cwd	= getcwd(NULL, 0);
@@ -199,7 +211,7 @@ main(int argc, char **argv)
         printf("%4d: %s\n", i, args.args[i]);
     }
 
-  populate_env(&env, ouid, ogid, cwd);
+  populate_env(&env, no_shellshock, ouid, ogid, cwd);
   if (*dir && chdir(dir))
     OOPS(dir, "cannot change directory", NULL);
 
