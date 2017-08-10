@@ -1,0 +1,59 @@
+# Read instructions in Makefile.proto how to use this.
+#
+# Prototype for your source directory Makefile.tino
+# Not copyrighted as this is just a stub.
+#
+# This Works is placed under the terms of the Copyright Less License,
+# see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
+#
+# COPYRIGHT.CLL can be found at http://permalink.de/tino/cll
+
+      PROGS=suid
+       CONF=suid.conf
+       OBJS=
+#VERSIONFILE=
+# VERSIONEXT=py
+#VERSIONNAME=
+# Additional (fixed) installs for
+# bin sbin lib etc man share/man inf share/inf respectively
+ INSTALLBIN=
+INSTALLSBIN=
+ INSTALLLIB=
+ INSTALLETC=
+ INSTALLMAN=
+INSTALLSMAN=
+ INSTALLINF=
+INSTALLSINF=
+#    SUBDIRS=diet
+#         CC=diet/tinodiet.sh --tinodiet
+#        CXX=diet/tinodiet.sh ++ --tinodiet
+#       LIBS=diet/libcurl.a diet/libssl.a diet/libcrypto.a diet/libz.a
+# If you use -I. or -Itino, be sure to use -I-, too.
+ ADD_CFLAGS=
+ADD_CCFLAGS=
+ADD_LDFLAGS=
+ ADD_LDLIBS=
+      CLEAN=
+  CLEANDIRS=
+  DISTCLEAN=
+   TINOCOPY=
+#    TINOINC=tino_common.h
+#    TINOLIB=tino/lib.h
+INSTALLPATH=/usr/local
+# DBG_CFLAGS=
+#DBG_CCFLAGS=
+#DBG_LDFLAGS=
+# DBG_LDLIBS=-lefence
+# STD_CFLAGS=-g -Wall -O3
+#STD_CCFLAGS=-g -Wall -O3
+#STD_LDFLAGS=
+# STD_LDLIBS=-lstdc++
+
+Makefile::
+	$(MAKE) -C tino tino HERE="$(PWD)"
+
+install::
+	chown 0:0  $(INSTALLPATH)/bin/suid
+	chmod 4555 $(INSTALLPATH)/bin/suid
+	if [ -f '/etc/$(CONF)' ]; then install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
+

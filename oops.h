@@ -103,8 +103,11 @@ OOPS(const char *bug, ...)
       writes(2, s);
     }
   va_end(list);
-  writes(2, ": ");
-  writes(2, strerror(e));
+  if (e)
+    {
+      writes(2, ": ");
+      writes(2, strerror(e));
+    }
   writes(2, "\n");
   exit(23);	/* 23 Nicht ist so wie es scheint	*/
 }

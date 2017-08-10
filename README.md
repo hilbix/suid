@@ -42,6 +42,13 @@ Is this secure?
 - When sending pull requests, please stick to the license.  (This is, abandon all Copyright from what you wrote.)
 
 
+Other conf?
+
+- For security reasons `suid` only uses `/etc/suid.conf`.
+
+- It would be very difficult to allow several different `suid` wrappers with autoconfig.  So only one is supported.
+
+
 License?
 
 - See License below.

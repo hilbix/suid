@@ -1,0 +1,6 @@
+Run configured scripts with suid privilege
+
+"suid" is "command->user" which is a bit inverse to "sudo", which is "user->command".  There are some important differences:
+
+"suid" does not sit in the process chain as it does not fork.  There is no password required to start the commands.  The config /etc/suid.conf has the well known /etc/passwd format.  There is a well defined disarmed environment of the run command.  It also disables shell function exports (aka. shellshock).
+

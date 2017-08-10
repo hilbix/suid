@@ -4,11 +4,15 @@
  * see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
  */
 
+#define	_GNU_SOURCE
+
 #include "linereader.h"
 #include "args.h"
 
 #include <pwd.h>
 #include <grp.h>
+
+#include "suid_version.h"
 
 #define	CONF	"/etc/suid.conf"
 #define	PATH	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -27,6 +31,12 @@ next(char *s)
   return ptr;
 }
 
+static int
+shellshock(const char *s)
+{
+  return !memcmp(s, "() {", 4);
+}
+
 /* Prepare SUID environment
  */
 static void
@@ -35,14 +45,18 @@ populate_env(struct args *env, int uid, int gid, const char *cwd)
   char	**p, *s;
 
   args_add(env, PATH);
-  if ((s=getenv("TERM"))!=0)
+  if ((s=getenv("TERM"))!=0 && !shellshock(s))
     args_addf(env, "TERM=%s", s);
   args_addf(env, "SUIDUID=%d", uid);
   args_addf(env, "SUIDGID=%d", gid);
   if (cwd)
     args_addf(env, "SUIDPWD=%s", cwd);
   for (p=environ; *p; p++)
-    args_addf(env, "SUID_%s", *p);
+    {
+      s	= strchr(*p, '=');
+      if (s && !shellshock(s+1))
+        args_addf(env, "SUID_%s", *p);
+    }
 }
 
 /* This routine is too long
@@ -60,7 +74,14 @@ main(int argc, char **argv)
   if (argc<2)
     {
       /* Avoid to print user defined parameters, so do not output argv[0] here	*/
-      OOPS("Usage: suid command [args..]", NULL);
+      OOPS("Usage: suid command [args..]\n"
+	   "\t\tVersion " SUID_VERSION " compiled " __DATE__ "\n"
+	   "\tConfig is in file " CONF ":\n"
+	   "\tcommand:pw:user:grp:minmax:dir:/path/to/binary:args..\n"
+	   "\tpw:       currently must be empty ('')\n"
+	   "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
+	   "\tminmax:   [D][minargs][-[maxargs]]"
+           , NULL);
     }
 
   cmd = argv[1];
