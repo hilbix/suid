@@ -49,6 +49,22 @@ Other conf?
 - It would be very difficult to allow several different `suid` wrappers with autoconfig.  So only one is supported.
 
 
+`Missing privilege separation directory: /var/run/sshd`
+
+- This can happen if you try to run `suid sshd` when `/etc/suid.conf` has a line like:
+
+      sshd::::D:/:/usr/sbin/sshd:-D
+
+- Solution: Start `sshd` one time the normal way:
+
+      sudo /etc/init.d/ssh start
+      sudo /etc/init.d/ssh stop
+
+- This way you can start `sshd` on Windows 10:
+
+      echo exec suid sshd; | C:\Windows\System32\bash.exe
+
+
 License?
 
 - See License below.
