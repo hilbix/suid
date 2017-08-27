@@ -1,7 +1,7 @@
 # Makefile automatically generated, do not edit!
 # This output (only this Makefile) is Public Domain.
 #
-#@MD5TINOIGN@ Creation date: Sun Aug  6 21:09:12 DST 2017
+#@MD5TINOIGN@ Creation date: Sun Aug 27 14:03:53 DST 2017
 #
 # This file is based on following files:
 #@MD5TINOIGN@ 1: Makefile.tino
@@ -170,7 +170,7 @@ $(PROG1):	$(PROG1).o $(OBJS) $(LIBS)
 # compiler generated dependencies, remove if incorrect
 
 # included: suid.d
-$(PROG1).o:  suid.c linereader.h oops.h args.h suid_version.h
+$(PROG1).o:  suid.c linereader.h oops.h args.h suid_version.h osx.h
 
 
 #@MD5TINOIGN@ rules from: Makefile.tino

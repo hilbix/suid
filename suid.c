@@ -14,6 +14,8 @@
 
 #include "suid_version.h"
 
+#include "osx.h"
+
 #define	CONF	"/etc/suid.conf"
 #define	PATH	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
