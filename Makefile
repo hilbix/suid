@@ -1,7 +1,7 @@
 # Makefile automatically generated, do not edit!
 # This output (only this Makefile) is Public Domain.
 #
-#@MD5TINOIGN@ Creation date: Sun Aug 27 14:03:53 DST 2017
+#@MD5TINOIGN@ Creation date: Tue Aug 29 11:58:21 DST 2017
 #
 # This file is based on following files:
 #@MD5TINOIGN@ 1: Makefile.tino
@@ -43,8 +43,8 @@ INSTALLPATH=/usr/local
       PROG1=suid
 
 # Override those in Makefile.tino if needed:
- STD_CFLAGS=-g -Wall -Wno-unused-function -O3 -Wno-error=unused-value
- STD_CCFLAGS=-g -Wall -Wno-unused-function -O3 -Wno-error=unused-value
+ STD_CFLAGS=-g -Wall -Wno-unused-function -O3 -Wno-error=unused-value -Wno-error=unused-function
+ STD_CCFLAGS=-g -Wall -Wno-unused-function -O3 -Wno-error=unused-value -Wno-error=unused-function
 STD_LDFLAGS=
  STD_LDLIBS=
     BINPATH=bin
