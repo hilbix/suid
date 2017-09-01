@@ -6,12 +6,25 @@
 
 #include "oops.h"
 
+#ifndef	LINEREADER_MAX
+#define	LINEREADER_MAX	BUFSIZ
+#endif
+
 struct linereader
   {
     int		fd, pos, fill, eof, err;
-    char	buf[BUFSIZ];
-    char	*name;
+    int		linenr;
+    char	buf[LINEREADER_MAX], *line;
+    const char	*name;
   };
+
+static void
+linereader_init(struct linereader *l, const char *name)
+{
+  memset(l, 0, sizeof *l);
+  l->fd		= -1;
+  l->name	= name;
+}
 
 /* Close the linereader and get the error state	*/
 static int
@@ -28,10 +41,10 @@ linereader_end(struct linereader *l)
   return l->err;
 }
 
-/* struct linereader l = { -1 };
- * l->name = "FILE";
- * while (ptr = linereader(&l))
- *   process(line);
+/* struct linereader l;
+ * linereader_init(&l, "FILENAME");
+ * while (linereader(&l))
+ *   process(l.line, l.linenr);
  * if (linereader_end(&l))
  *   error(errno);
  *
@@ -62,18 +75,19 @@ linereader(struct linereader *l)
         }
       FATAL(l->pos<0 || l->fill<0 || l->pos>sizeof l->buf || l->fill>sizeof l->buf);
 
-      /* hunt for complate line */
+      /* hunt for complete line */
       for (i=l->pos; i<l->fill; i++)
 	switch (l->buf[i])
 	  {
 	  case '\n':
 	    tmp		= l->pos;
 	    l->pos	= i+1;
-	    l->buf[i]	= 0;	/* NUL terminated line	*/
-	    return l->buf+tmp;	/* return line	*/
+	    l->buf[i]	= 0;			/* NUL terminated line	*/
+	    l->linenr++;
+	    return l->line = l->buf+tmp;	/* return line	*/
 
 	  case 0:
-	    OOPS(l->name, "contains stray NUL", NULL);
+	    OOPS(l->name, OOPS_I, l->linenr+1, "contains stray NUL", NULL);
 	  }
 
       /* free no more needed buffer space */
@@ -88,7 +102,7 @@ linereader(struct linereader *l)
       /* l->pos == 0	*/
 
       if (l->fill >= sizeof l->buf)
-	OOPS(l->name, "line too long", NULL);
+	OOPS(l->name, OOPS_I, l->linenr+1, "line too long", NULL);
 
       if (l->eof)
 	{
@@ -113,7 +127,7 @@ linereader(struct linereader *l)
       if (!tmp)
         l->eof = 1;
     }
-  OOPS(l->name, "too many interrupts", NULL);
+  OOPS(l->name, OOPS_I, l->linenr+1, "too many interrupts", NULL);
   return 0;
 }
 
