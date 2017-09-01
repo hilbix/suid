@@ -194,7 +194,7 @@ main(int argc, char **argv)
   cmd = argv[1];
 #if 1	/* rly?	*/
   if (strchr(cmd, '/'))
-    OOPS("command must not contain '/'", NULL);
+    OOPS(argv[0], "command must not contain '/'", NULL);
 #endif
 
   /* scan /etc/suid.conf and /etc/suid.conf.d/	*/
