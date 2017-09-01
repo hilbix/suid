@@ -53,7 +53,9 @@ Makefile::
 	$(MAKE) -C tino tino HERE="$(PWD)"
 
 install::
-	chown 0:0  $(INSTALLPATH)/bin/suid
-	chmod 4555 $(INSTALLPATH)/bin/suid
-	if [ -f '/etc/$(CONF)' ]; then install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
+	mkdir -p -m755 /etc/suid.conf.d
+	chown 0:0  $(INSTALLPATH)/bin/suid /etc/suid.conf.d
+	chmod 6555 $(INSTALLPATH)/bin/suid
+	if [ -f '/etc/$(CONF)' ]; then install --backup=t --compare -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
+	install --backup=t --compare -m644 -o0 -g0 -t/etc/suid.conf.d/ suid.conf.d/*.ex
 

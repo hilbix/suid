@@ -1,7 +1,7 @@
 # Makefile automatically generated, do not edit!
 # This output (only this Makefile) is Public Domain.
 #
-#@MD5TINOIGN@ Creation date: Tue Aug 29 11:58:21 DST 2017
+#@MD5TINOIGN@ Creation date: Sat Sep  2 00:01:55 DST 2017
 #
 # This file is based on following files:
 #@MD5TINOIGN@ 1: Makefile.tino
@@ -176,7 +176,9 @@ $(PROG1).o:  suid.c linereader.h oops.h args.h suid_version.h osx.h
 #@MD5TINOIGN@ rules from: Makefile.tino
 
 install::
-	chown 0:0  $(INSTALLPATH)/bin/suid
-	chmod 4555 $(INSTALLPATH)/bin/suid
-	if [ -f '/etc/$(CONF)' ]; then install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
+	mkdir -p -m755 /etc/suid.conf.d
+	chown 0:0  $(INSTALLPATH)/bin/suid /etc/suid.conf.d
+	chmod 6555 $(INSTALLPATH)/bin/suid
+	if [ -f '/etc/$(CONF)' ]; then install --backup=t --compare -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
+	install --backup=t --compare -m644 -o0 -g0 -t/etc/suid.conf.d/ suid.conf.d/*.ex
 # end
