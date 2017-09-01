@@ -45,9 +45,9 @@ Is `suid` secure?
 
 Other conf?
 
-- For security reasons `suid` only uses `/etc/suid.conf`.  (In future `/etc/suid.conf.d/` might show up, too.)
+- For security reasons `suid` configuration is kept in `/etc/suid.conf` and files `/etc/suid.conf.d/*.conf`
 
-- It would be very difficult to allow several different `suid` wrappers with autoconfig.  So only one is supported.
+- It would be very difficult to allow several different `suid` wrappers with autoconfig.  So there is only one supported.
 
 
 `Missing privilege separation directory: /var/run/sshd`
