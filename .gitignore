@@ -1,3 +1,4 @@
-*.d
-*.o
-suid
+/*.d
+!/suid.conf.d/
+/*.o
+/suid
