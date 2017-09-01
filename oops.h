@@ -16,6 +16,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define	OOPS_I		(char *)1	/* OOPS(OOPS_I, 1, NULL)	*/
+#define	OOPS_ULL	(char *)2	/* OOPS(OOPS_ULL, 2ll, NULL)	*/
+
 #define	FATAL(X)	do { if (X) OOPS(__FILE__, __FUNCTION__, "internal error", #X, NULL); } while (0)
 
 #ifndef MAXLOOPS
@@ -99,6 +102,18 @@ OOPS(const char *bug, ...)
   va_start(list, bug);
   while ((s=va_arg(list, const char *))!=0)
     {
+      char	buf[22];
+
+      if (s==OOPS_I)
+	{
+	  snprintf(buf, sizeof buf, "%d", va_arg(list, int));
+	  s	= buf;
+        }
+      else if (s==OOPS_ULL)
+	{
+          snprintf(buf, sizeof buf, "%llu", va_arg(list, unsigned long long));
+	  s	= buf;
+	}
       writes(2, ": ");
       writes(2, s);
     }
@@ -117,7 +132,7 @@ re_alloc(void *buf, size_t len)
 {
   buf	= realloc(buf, len);
   if (!buf)
-    OOPS("out of memory", NULL);
+    OOPS(OOPS_ULL, (unsigned long long)len, "out of memory", NULL);
   return buf;
 }
 
