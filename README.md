@@ -26,25 +26,26 @@ See `suid.conf` sample file.
 
 Why not `sudo`?
 
-- `sudo` becomes the parent of the called program.  This is for additinal safety, because in former times you were able to send signals to `suid` programs.  So the forked `suid` programs cannot access the PID of the caller (and `suid` does not forward this to the child either).
+- `sudo` becomes the parent of the called program.  This is for additinal safety, because in former times you were able to send signals to `suid` programs.  So the forked `suid` programs cannot access the PID of the caller (and `sudo` does not expose the parent to the child either).
 
-- I hate it to use `sudo` to allow users to do things on system level.  Also the `sudoers` file syntax is far from intuitive.  It is far more easy to just invoke a command, and enable the command to sort it out.
+- I do not like `sudo` to allow users to do things on a system level.  Also the `sudoers` file syntax is far from intuitive and the calling convention of `sudo` is ugly.  Instead I think it is far more easy to wrap it like `suid` does and empower the called command to sort things out (safely).
 
-- This here is very easy to use, as it does not involve passwords (for now).
+- `suid` is very easy to use, as it does not involve passwords (for now).
 
 
-Is this secure?
+Is `suid` secure?
 
 - Hope so.  I did my best to avoid common pitfalls.  But no guarantees, though.
 
-- If you find a bug, please open an Issue at GitHub.
+- If you find a bug, please [open an Issue at GitHub](https://github.com/hilbix/suid/issues).
 
-- When sending pull requests, please stick to the license.  (This is, abandon all Copyright from what you wrote.)
+- When sending pull requests, please stick to the "license".  (This is, abandon all Copyright from what you wrote.)
 
+- `suid` does not automagically secure your wrappers in `/etc/suid.conf`, so do not use insecure directories like `/tmp/` (dirs with write access only from `root` should be ok).
 
 Other conf?
 
-- For security reasons `suid` only uses `/etc/suid.conf`.
+- For security reasons `suid` only uses `/etc/suid.conf`.  (In future `/etc/suid.conf.d/` might show up, too.)
 
 - It would be very difficult to allow several different `suid` wrappers with autoconfig.  So only one is supported.
 
@@ -55,14 +56,25 @@ Other conf?
 
       sshd::::D:/:/usr/sbin/sshd:-D
 
-- Solution: Start `sshd` one time the normal way:
+- Solution: Wrap `sshd` a bit deeper:
 
-      sudo /etc/init.d/ssh start
-      sudo /etc/init.d/ssh stop
+      sshd::::D:/:/bin/sh:-c:mkdir -pm700 /var/run/sshd && { flock -nx 1 && exec /usr/sbin/sshd -D </dev/null; } >> /var/run/sshd/lock 2>&1
 
-- This way you can start `sshd` on Windows 10:
+- This way you can start `sshd` on Windows 10 with a `.bat` like this:
 
       echo exec suid sshd; | C:\Windows\System32\bash.exe
+
+  This then looks very nice and natural (here with `putty localhost`):
+  
+      $ pstree -p
+      init(1)───sshd(2)───sshd(5)───sshd(38)─┬─bash(39)───vim(134)
+                                             └─bash(92)───pstree(135)
+
+Debianized version?
+
+- I'm working on it.
+
+- However I probably do not have time to become a Debian maintainer myself.
 
 
 License?
