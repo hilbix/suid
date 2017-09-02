@@ -16,9 +16,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define	OOPS_I		(char *)1	/* OOPS(OOPS_I, 1, NULL)	*/
-#define	OOPS_ULL	(char *)2	/* OOPS(OOPS_ULL, 2ll, NULL)	*/
-#define	OOPS_O		(char *)3	/* OOPS(OOPS_O, 012, NULL)	*/
+#define	OOPS_I		(char *)1	/* OOPS("int", OOPS_I, 1, NULL)	*/
+#define	OOPS_LLU	(char *)2	/* OOPS("long", OOPS_LLU, 2ll, NULL)	*/
+#define	OOPS_O		(char *)3	/* OOPS("oct", OOPS_O, 012, NULL)	*/
 
 #define	FATAL(X)	do { if (X) OOPS(__FILE__, __FUNCTION__, "internal error", #X, NULL); } while (0)
 
@@ -110,7 +110,7 @@ OOPS(const char *bug, ...)
 	  snprintf(buf, sizeof buf, "%d", va_arg(list, int));
 	  s	= buf;
         }
-      else if (s==OOPS_ULL)
+      else if (s==OOPS_LLU)
 	{
           snprintf(buf, sizeof buf, "%llu", va_arg(list, unsigned long long));
 	  s	= buf;
@@ -138,7 +138,7 @@ re_alloc(void *buf, size_t len)
 {
   buf	= realloc(buf, len);
   if (!buf)
-    OOPS(OOPS_ULL, (unsigned long long)len, "out of memory", NULL);
+    OOPS("out of memory", OOPS_LLU, (unsigned long long)len, NULL);
   return buf;
 }
 
