@@ -82,24 +82,42 @@ populate_env(struct args *env, int allow_shellshock, int uid, int gid, const cha
     }
 }
 
+static int
+checkown(const char *path)
+{
+  struct stat st;
+
+  if (stat(path, &st))
+    return 1;
+  if (st.st_uid)
+    OOPS(path, "wrong ownership", OOPS_I, (int)st.st_uid, NULL);
+  if (st.st_uid || st.st_gid)
+    OOPS(path, "wrong group", OOPS_I, (int)st.st_gid, NULL);
+  if (st.st_mode & 022)
+    OOPS(path, "wrong mode", OOPS_O, st.st_mode, NULL);
+  return 0;
+}
+
 static char *
 scan_file(struct scan *scan, const char *cmd)
 {
-  char	*line, *pass;
+  char	*line;
+
+  if (checkown(scan->file))
+    return 0;
 
   linereader_init(&scan->l, scan->file);
-  while ((line = linereader(&scan->l))!=0)
+  while ((scan->pos = line = linereader(&scan->l))!=0)
     {
       if (*line == '#' || !*line)
 	continue;
-      scan->pos	= line;
-      pass	= next(scan);
+      next(scan);
       if (!strcmp(cmd, line))
-	return pass;
+	break;
     }
   if (linereader_end(&scan->l))
     OOPS(scan->file, OOPS_I, scan->l.linenr, "read error", NULL);
-  return 0;
+  return scan->pos;	/* 0 on EOF, else position of password	*/
 }
 
 static int
@@ -127,6 +145,9 @@ find_cmd(struct scan *scan, const char *cmd)
   strcpy(scan->file, CONF);
   if (scan_file(scan, cmd))
     return 0;	/* found	*/
+
+  if (checkown(CONFDIR))
+    return 1;	/* missing /etc/suid.conf.d/	*/
 
   /* check /etc/suid.conf.d/ *.conf	*/
   n	= scandir(CONFDIR, &ent, conf_filter, alphasort);
