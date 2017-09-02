@@ -18,6 +18,7 @@
 
 #define	OOPS_I		(char *)1	/* OOPS(OOPS_I, 1, NULL)	*/
 #define	OOPS_ULL	(char *)2	/* OOPS(OOPS_ULL, 2ll, NULL)	*/
+#define	OOPS_O		(char *)3	/* OOPS(OOPS_O, 012, NULL)	*/
 
 #define	FATAL(X)	do { if (X) OOPS(__FILE__, __FUNCTION__, "internal error", #X, NULL); } while (0)
 
@@ -112,6 +113,11 @@ OOPS(const char *bug, ...)
       else if (s==OOPS_ULL)
 	{
           snprintf(buf, sizeof buf, "%llu", va_arg(list, unsigned long long));
+	  s	= buf;
+	}
+      else if (s==OOPS_O)
+	{
+          snprintf(buf, sizeof buf, "0%03o", va_arg(list, int));
 	  s	= buf;
 	}
       writes(2, ": ");
