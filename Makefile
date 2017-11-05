@@ -1,7 +1,7 @@
 # Makefile automatically generated, do not edit!
 # This output (only this Makefile) is Public Domain.
 #
-#@MD5TINOIGN@ Creation date: Sat Sep  2 00:01:55 DST 2017
+#@MD5TINOIGN@ Creation date: Sun Nov  5 18:52:15 CET 2017
 #
 # This file is based on following files:
 #@MD5TINOIGN@ 1: Makefile.tino
@@ -180,5 +180,5 @@ install::
 	chown 0:0  $(INSTALLPATH)/bin/suid /etc/suid.conf.d
 	chmod 6555 $(INSTALLPATH)/bin/suid
 	if [ -f '/etc/$(CONF)' ]; then install --backup=t --compare -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
-	install --backup=t --compare -m644 -o0 -g0 -t/etc/suid.conf.d/ suid.conf.d/*.ex
+	install --backup=t --compare -m644 -o0 -g0 -t/etc/suid.conf.d/ suid.conf.d.example/*.ex
 # end
