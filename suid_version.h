@@ -1,1 +1,1 @@
-#define SUID_VERSION "0.2.1"
+#define SUID_VERSION "1.0.0"
