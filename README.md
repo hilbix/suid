@@ -1,3 +1,5 @@
+> **Warning!  Versions before 1.0.0 had a major security flaw!** (major version incremented due to the flaw)
+
 # SUID
 
 Somewhat an inverse to `sudo`.
