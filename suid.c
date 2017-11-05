@@ -292,8 +292,10 @@ main(int argc, char **argv)
     }
 
   /* Apply the new uid/gid	*/
-  IGUR(setuid(uid));
-  IGUR(setgid(gid));
+  if (setgid(gid))
+    OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop group priv", OOPS_I, gid, NULL);
+  if (setuid(uid))
+    OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop user priv", OOPS_I, uid, NULL);
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process minmax (everything after flags)
