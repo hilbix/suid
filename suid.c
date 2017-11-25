@@ -78,7 +78,7 @@ populate_env(struct args *env, int allow_shellshock, int uid, int gid, const cha
     {
       s	= strchr(*p, '=');
       if (s && (allow_shellshock || !shellshock(s+1)))
-        args_addf(env, "SUID_%s", *p);
+	args_addf(env, "SUID_%s", *p);
     }
 }
 
@@ -156,7 +156,7 @@ find_cmd(struct scan *scan, const char *cmd)
     {
       snprintf(scan->file, sizeof scan->file, "%s/%s", CONFDIR, (*ent)->d_name);
       if (scan_file(scan, cmd))
-        return 0;	/* found	*/
+	return 0;	/* found	*/
     }
 
   return 1;	/* not found	*/
@@ -182,7 +182,7 @@ get_flags(char *minmax, const char *flags, ...)
 	{
 	  minmax++;
 	  *i	= 1;
-        }
+	}
     }
   return minmax;
 }
@@ -287,7 +287,7 @@ main(int argc, char **argv)
 
       gr	= getgrnam(group);
       if (!gr)
-        OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "group", group, "not found", NULL);
+	OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "group", group, "not found", NULL);
       gid	= gr->gr_gid;
     }
 
@@ -309,7 +309,7 @@ main(int argc, char **argv)
     }
   if (*minmax)
     OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "wrong minmax", minmax, NULL);
- 
+
   /* check that number of arguments are within given min-max	*/
   if (argc-2<minarg || (maxarg>=0 && argc-2>maxarg))
     OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "wrong number of arguments", NULL);
@@ -338,7 +338,7 @@ main(int argc, char **argv)
       fprintf(stderr, "args: %d - %d\n", minarg, maxarg);
       fprintf(stderr, "dir:  %s\n", dir);
       for (i=0; args.args[i]; i++)
-        printf("%4d: %s\n", i, args.args[i]);
+	printf("%4d: %s\n", i, args.args[i]);
     }
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
