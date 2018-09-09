@@ -34,6 +34,8 @@ Why not `sudo`?
 
 - `suid` is very easy to use, as it does not involve passwords (for now).
 
+- `suid` easily supports Namespaces, 2nd Factor etc.
+
 
 Is `suid` secure?
 
@@ -67,7 +69,7 @@ Other conf?
       echo exec suid sshd; | C:\Windows\System32\bash.exe
 
   This then looks very nice and natural (here with `putty localhost`):
-  
+
       $ pstree -p
       init(1)───sshd(2)───sshd(5)───sshd(38)─┬─bash(39)───vim(134)
                                              └─bash(92)───pstree(135)
@@ -84,6 +86,13 @@ License?
 - See License below.
 
 - Yeah, this is not really a license, but it defines the rules.
+
+
+Why 23?
+
+- See [23 (film)](https://en.wikipedia.org/wiki/23_(film))
+- The title of this film expresses "nothing is what it seems", that's exactly what the number wants to express.
+- On shell level I prefer 42 for Usage and 23 for OOPS.  `suid` currently can only OOPS.
 
 
 ## License
