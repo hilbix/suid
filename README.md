@@ -88,13 +88,6 @@ License?
 - Yeah, this is not really a license, but it defines the rules.
 
 
-Why 23?
-
-- See [23 (film)](https://en.wikipedia.org/wiki/23_(film))
-- The title of this film expresses "nothing is what it seems", that's exactly what the number wants to express.
-- On shell level I prefer 42 for Usage and 23 for OOPS.  `suid` currently can only OOPS.
-
-
 ## License
 
 This Works is placed under the terms of the Copyright Less License,
