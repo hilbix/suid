@@ -45,11 +45,11 @@ writex(int fd, const void *ptr, size_t len)
       if (!put)
         break;
       if (put<0)
-	{
-	  if (loops>MAXLOOPS || errno!=EINTR)
-	    return put;
+        {
+          if (loops>MAXLOOPS || errno!=EINTR)
+            return put;
           else
-	    continue;
+            continue;
         }
       pos += put;
     }
@@ -66,10 +66,10 @@ strxcat(char *buf, const char *add, size_t max)
   for (i=0; i<max; i++)
     if (!buf[i])
       {
-	strncpy(buf+i, add, max-i);
-	if (buf[max-1])
-	  OOPS("strxcat() buffer overflow", NULL);
-	return buf;
+        strncpy(buf+i, add, max-i);
+        if (buf[max-1])
+          OOPS("strxcat() buffer overflow", NULL);
+        return buf;
       }
   OOPS("strxcat() string not terminated with NUL", NULL);
 }
@@ -106,20 +106,20 @@ OOPS(const char *bug, ...)
       char	buf[22];
 
       if (s==OOPS_I)
-	{
-	  snprintf(buf, sizeof buf, "%d", va_arg(list, int));
-	  s	= buf;
+        {
+          snprintf(buf, sizeof buf, "%d", va_arg(list, int));
+          s	= buf;
         }
       else if (s==OOPS_LLU)
-	{
+        {
           snprintf(buf, sizeof buf, "%llu", va_arg(list, unsigned long long));
-	  s	= buf;
-	}
+          s	= buf;
+        }
       else if (s==OOPS_O)
-	{
+        {
           snprintf(buf, sizeof buf, "0%03o", va_arg(list, int));
-	  s	= buf;
-	}
+          s	= buf;
+        }
       writes(2, ": ");
       writes(2, s);
     }

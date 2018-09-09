@@ -33,7 +33,7 @@ linereader_end(struct linereader *l)
   if (l->fd >= 0)
     {
       if (closex(l->fd))
-	l->err = errno;
+        l->err = errno;
       l->fd = -1;
     }
   if (l->err)
@@ -77,51 +77,51 @@ linereader(struct linereader *l)
 
       /* hunt for complete line */
       for (i=l->pos; i<l->fill; i++)
-	switch (l->buf[i])
-	  {
-	  case '\n':
-	    tmp		= l->pos;
-	    l->pos	= i+1;
-	    l->buf[i]	= 0;			/* NUL terminated line	*/
-	    l->linenr++;
-	    return l->line = l->buf+tmp;	/* return line	*/
+        switch (l->buf[i])
+          {
+          case '\n':
+            tmp		= l->pos;
+            l->pos	= i+1;
+            l->buf[i]	= 0;			/* NUL terminated line	*/
+            l->linenr++;
+            return l->line = l->buf+tmp;	/* return line	*/
 
-	  case 0:
-	    OOPS(l->name, OOPS_I, l->linenr+1, "contains stray NUL", NULL);
-	  }
+          case 0:
+            OOPS(l->name, OOPS_I, l->linenr+1, "contains stray NUL", NULL);
+          }
 
       /* free no more needed buffer space */
       if (l->pos)
-	{
-	  /* l->pos < l->fill, see above	*/
-	  memmove(l->buf, l->buf + l->pos, l->fill - l->pos);
+        {
+          /* l->pos < l->fill, see above	*/
+          memmove(l->buf, l->buf + l->pos, l->fill - l->pos);
           l->fill	-= l->pos;
           l->pos	= 0;
-	}
+        }
 
       /* l->pos == 0	*/
 
       if (l->fill >= sizeof l->buf)
-	OOPS(l->name, OOPS_I, l->linenr+1, "line too long", NULL);
+        OOPS(l->name, OOPS_I, l->linenr+1, "line too long", NULL);
 
       if (l->eof)
-	{
-	  /* l->fill < sizeof l->buf	*/
+        {
+          /* l->fill < sizeof l->buf	*/
           l->buf[l->pos = l->fill] = 0;
-	  return l->fill ? l->buf : 0;	/* return last line without LF, or EOF	*/
-	}
+          return l->fill ? l->buf : 0;	/* return last line without LF, or EOF	*/
+        }
 
       /* read more data */
       /* l->fill < sizeof l->buf	*/
       tmp = read(l->fd, l->buf + l->fill, (sizeof l->buf) - l->fill);
 
       if (tmp<0)
-	{
-	  if (errno==EINTR)
-	    continue;	/* ignore EINTR	*/
+        {
+          if (errno==EINTR)
+            continue;	/* ignore EINTR	*/
           l->err	= errno;
-	  return 0;
-	}
+          return 0;
+        }
 
       l->fill += tmp;
       if (!tmp)

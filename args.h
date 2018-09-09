@@ -38,7 +38,7 @@ args_addf(struct args *a, const char *s, ...)
       k = vsnprintf(buf, n, s, list);
       va_end(list);
       if (k<n)
-	break;
+        break;
     }
   k = strlen(buf);
   if (k+1<n)

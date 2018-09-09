@@ -78,7 +78,7 @@ populate_env(struct args *env, int allow_shellshock, int uid, int gid, const cha
     {
       s	= strchr(*p, '=');
       if (s && (allow_shellshock || !shellshock(s+1)))
-	args_addf(env, "SUID_%s", *p);
+        args_addf(env, "SUID_%s", *p);
     }
 }
 
@@ -110,10 +110,10 @@ scan_file(struct scan *scan, const char *cmd)
   while ((scan->pos = line = linereader(&scan->l))!=0)
     {
       if (*line == '#' || !*line)
-	continue;
+        continue;
       next(scan);
       if (!strcmp(cmd, line))
-	break;
+        break;
     }
   if (linereader_end(&scan->l))
     OOPS(scan->file, OOPS_I, scan->l.linenr, "read error", NULL);
@@ -156,7 +156,7 @@ find_cmd(struct scan *scan, const char *cmd)
     {
       snprintf(scan->file, sizeof scan->file, "%s/%s", CONFDIR, (*ent)->d_name);
       if (scan_file(scan, cmd))
-	return 0;	/* found	*/
+        return 0;	/* found	*/
     }
 
   return 1;	/* not found	*/
@@ -179,10 +179,10 @@ get_flags(char *minmax, const char *flags, ...)
       i		= va_arg(list, int *);
       *i	= 0;
       if (*minmax == *flags)
-	{
-	  minmax++;
-	  *i	= 1;
-	}
+        {
+          minmax++;
+          *i	= 1;
+        }
     }
   return minmax;
 }
@@ -203,12 +203,12 @@ main(int argc, char **argv)
     {
       /* Avoid to print user defined parameters, so do not output argv[0] here	*/
       OOPS("Usage: suid command [args..]\n"
-	   "\t\tVersion " SUID_VERSION " compiled " __DATE__ "\n"
-	   "\tConfig is in file " CONF " or dir " CONFDIR "/*" CONFEXT ":\n"
-	   "\tcommand:pw:user:grp:minmax:dir:/path/to/binary:args..\n"
-	   "\tpw:       currently must be empty ('')\n"
-	   "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
-	   "\tminmax:   [D][S][minargs][-[maxargs]]"
+           "\t\tVersion " SUID_VERSION " compiled " __DATE__ "\n"
+           "\tConfig is in file " CONF " or dir " CONFDIR "/*" CONFEXT ":\n"
+           "\tcommand:pw:user:grp:minmax:dir:/path/to/binary:args..\n"
+           "\tpw:       currently must be empty ('')\n"
+           "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
+           "\tminmax:   [D][S][minargs][-[maxargs]]"
            , NULL);
     }
 
@@ -287,7 +287,7 @@ main(int argc, char **argv)
 
       gr	= getgrnam(group);
       if (!gr)
-	OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "group", group, "not found", NULL);
+        OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "group", group, "not found", NULL);
       gid	= gr->gr_gid;
     }
 
@@ -322,7 +322,7 @@ main(int argc, char **argv)
       args_add(&args, line);
       line	= strchr(line, ':');
       if (!line)
-	break;
+        break;
       *line++	= 0;
     }
   /* append additional arguments to commandline	*/
@@ -338,7 +338,7 @@ main(int argc, char **argv)
       fprintf(stderr, "args: %d - %d\n", minarg, maxarg);
       fprintf(stderr, "dir:  %s\n", dir);
       for (i=0; args.args[i]; i++)
-	printf("%4d: %s\n", i, args.args[i]);
+        printf("%4d: %s\n", i, args.args[i]);
     }
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
