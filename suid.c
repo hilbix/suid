@@ -208,7 +208,22 @@ main(int argc, char **argv)
            "\tcommand:pw:user:grp:minmax:dir:/path/to/binary:args..\n"
            "\tpw:       currently must be empty ('')\n"
            "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
-           "\tminmax:   [D][S][minargs][-[maxargs]]"
+           "\tminmax:   [D][S][minargs][-[maxargs]]\n"
+           "\targs..:   optional list of : separated args\n"
+           "\t          Escape ':' with '\\:' and '\\' with '\\\\:'\n"
+           "\t          'a:b'  must be written as 'a\\:b'\n"
+           "\t          'a\\b'  can  be written as 'a\\\\:b'\n"
+           "\t          'a\\:b' must  be written as 'a\\\\:\\:b'\n"
+           "\n"
+           "\t!opt:option:value:!flags:dir:/path/to/checkscript:args..\n"
+           "\toption/value: optional, see list of options above\n"
+           "\t!flags:    ![D][S]\n"
+           "\tIf binary is given and fails, the whole process fails\n"
+           "\n"
+           "\tsuid usually returns the value of the binary, except:\n"
+           "\t125 for suid failure (like this usage)\n"
+           "\t126 if option fails (see: bash -c /dev/null)\n"
+           "\t127 if command not found (see: bash -c /notfound)\n"
            , NULL);
     }
 
