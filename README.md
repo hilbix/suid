@@ -45,6 +45,8 @@ Why not `sudo`?
 
 - `suid` allows to call (and control) SUID-aware programs without need to set SUID flags in filesystem
 
+- `suid` easily supports Namespaces, 2nd Factor etc.
+
 
 Call a script?
 
