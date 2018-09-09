@@ -130,7 +130,7 @@ OOPS(const char *bug, ...)
       writes(2, strerror(e));
     }
   writes(2, "\n");
-  exit(23);	/* 23 Nicht ist so wie es scheint	*/
+  exit(125);
 }
 
 static void *
