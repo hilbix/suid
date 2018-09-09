@@ -187,6 +187,14 @@ get_flags(char *minmax, const char *flags, ...)
   return minmax;
 }
 
+static void
+dump_options(FILE *fd)
+{
+#if 0
+  printf("SUID: list of options\n");
+#endif
+}
+
 /* This routine is too long
  */
 int
@@ -201,14 +209,38 @@ main(int argc, char **argv)
 
   if (argc<2)
     {
+      dump_options(stdout);	/* dump this to stdout	*/
       /* Avoid to print user defined parameters, so do not output argv[0] here	*/
       OOPS("Usage: suid command [args..]\n"
            "\t\tVersion " SUID_VERSION " compiled " __DATE__ "\n"
            "\tConfig is in file " CONF " or dir " CONFDIR "/*" CONFEXT ":\n"
+           "\n"
            "\tcommand:pw:user:grp:minmax:dir:/path/to/binary:args..\n"
-           "\tpw:       currently must be empty ('')\n"
+           "\tpw:       comma separated list of options\n"
            "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
-           "\tminmax:   [D][S][minargs][-[maxargs]]"
+           "\tminmax:   [D][S][minargs][-[maxargs]]\n"
+           "\targs..:   optional list of : separated args\n"
+           "\t          '\\:' escapes ':', '\\\\:' escapes '\\'\n"
+           "\t          'a\\:b'     is 'a:b'\n"
+           "\t          'a\\::b'    is 'a:'   followed by 'b'\n"
+           "\t          'a:\\:b'    is 'a'    followed by ':b'\n"
+           "\t          'a:\\::b'   is 'a'    followed by ':' followed by 'b'\n"
+           "\t          'a\\:\\:b'   is 'a::b'\n"
+           "\t          'a\\:\\b'    is 'a:\\b'\n"
+           "\t          'a\\:\\\\:b'  is 'a:\\b' as well\n"
+           "\t          'a\\\\:\\:b'  is 'a\\:b'\n"
+           "\t          'a\\\\::b'   is 'a\\' followed by 'b'.\n"
+           "\t          'a\\\\::\\:b' is 'a\\'  followed by ':b'\n"
+           "\n"
+           "\t!opt:option:value:!flags:dir:/path/to/checkscript:args..\n"
+           "\toption/value: optional, see list of options above\n"
+           "\t!flags:    ![D][S]\n"
+           "\tIf binary is given and fails, the whole process fails\n"
+           "\n"
+           "\tsuid usually returns the value of the binary, except:\n"
+           "\t125 for suid failure (like this usage)\n"
+           "\t126 if option fails (see: bash -c /dev/null)\n"
+           "\t127 if command not found (see: bash -c /notfound)\n"
            , NULL);
     }
 
