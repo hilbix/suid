@@ -5,6 +5,7 @@
  */
 
 #define	_GNU_SOURCE
+#define	OOPS_FAIL	126
 
 #include "linereader.h"
 #include "args.h"
