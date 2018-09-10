@@ -26,6 +26,10 @@
 #define	MAXLOOPS	(2*BUFSIZ)
 #endif
 
+#ifndef	OOPS_FAIL
+#define	OOPS_FAIL	23
+#endif
+
 static inline void IGUR() {}	/* IGnore Unused Return: IGUR(fn(args))	*/
 
 /* why isn't there a stdlib for this?	*/
@@ -130,7 +134,7 @@ OOPS(const char *bug, ...)
       writes(2, strerror(e));
     }
   writes(2, "\n");
-  exit(125);
+  exit(OOPS_FAIL);
 }
 
 static void *
