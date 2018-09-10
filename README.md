@@ -18,6 +18,12 @@ Afterwards you can run something as
 
 `suid` is inverse to `sudo` in the sense, that `sudo` is `user->command`, where `suid` is `command->user`.
 
+Return values:
+
+- 125 for suid failure (like usage)
+- 126 for option failure (compare: bash -c /dev/null)
+- 127 for command not found (compare: bash -c /notfound)
+
 
 ## Configuration and environment
 
