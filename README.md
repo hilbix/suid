@@ -23,6 +23,7 @@ Afterwards you can run something as
 
 Return values:
 
+- 125 for option failure (compare: bash -c /dev/null)
 - 126 for failure or usage (compare: bash -c /dev/null)
 - 127 for command not found (compare: bash -c /notfound)
 
