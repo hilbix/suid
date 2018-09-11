@@ -1,6 +1,6 @@
 > **Warning!  Versions before 1.0.0 had a major security flaw!** (major version incremented due to the flaw)
 
-[![suid dev Build Status](https://api.cirrus-ci.com/github/hilbix/suid.svg?branch=dev)](https://cirrus-ci.com/github/hilbix/suid/dev)
+[![suid dev Build Status](https://api.cirrus-ci.com/github/hilbix/suid.svg?branch=master)](https://cirrus-ci.com/github/hilbix/suid/master)
 
 
 # SUID
