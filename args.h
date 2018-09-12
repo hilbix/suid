@@ -10,6 +10,10 @@ struct args
     char	**args;
   };
 
+/* This adds a string to the given args,
+ * without allocating!
+ * So it can be manipulated later on.
+ */
 static void
 args_add(struct args *a, char *s)
 {
@@ -22,6 +26,9 @@ args_add(struct args *a, char *s)
   a->args[++a->n]	= 0;
 }
 
+/* This adds a printf formatted string to args,
+ * with allocating!
+ */
 static void
 args_addf(struct args *a, const char *s, ...)
 {
