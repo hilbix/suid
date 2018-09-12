@@ -32,6 +32,44 @@ struct scan
     char		file[FILENAME_MAX];
   };
 
+/* next arg with deescapement with ESC, but returns NULL on EOL
+ * If ESC==0 no deescapement happens.
+ * ESC :	gives :
+ * ESC ESC :	gives nothing
+ * else normal splitting occurs.
+ */
+static char *
+next_deescape(struct scan *scan, char esc)
+{
+  char	*ptr;
+
+  if (!scan->pos)
+    OOPS(scan->file, OOPS_I, scan->l.linenr, "line too short", NULL);
+
+  while ((ptr = strchr(scan->pos, ':'))!=0)
+    {
+      if (ptr<=scan->pos || ptr[-1]!=esc)	/* <= instead of == for safety	*/
+        {
+          /* split	*/
+          *ptr++	= 0;
+          scan->pos	= ptr;
+          return ptr;
+        }
+      if (ptr-1<=scan->pos || ptr[-2]!=esc)
+        strcpy(ptr-1, ptr);		/* \: seen but not \\:, remove the \	*/
+      else
+        {
+          ptr -= 2;
+          strcpy(ptr, ptr+3);		/* \\: seen, remove it completely	*/
+        }
+      /* loop after deescapement */
+      scan->pos	= ptr;
+    }
+
+  scan->pos	= 0;
+  return 0;
+}
+
 /* command:pw:user:group:minmax:dir:/path/to/binary:args..
  * Get next column
  */
@@ -40,11 +78,9 @@ next(struct scan *scan)
 {
   char	*ptr;
 
-  ptr	= strchr(scan->pos, ':');
+  ptr	= next_deescape(scan, 0);
   if (!ptr)
     OOPS(scan->file, OOPS_I, scan->l.linenr, "malformed line", NULL);
-  *ptr++	= 0;
-  scan->pos	= ptr;
   return ptr;
 }
 
@@ -332,16 +368,15 @@ main(int argc, char **argv)
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process args..
+   *
+   * De-Escape \: to : and \\: to nothing
    */
-  for (;;)
+  while (line)
     {
       args_add(&args, line);
-      line	= strchr(line, ':');
-      if (!line)
-        break;
-      *line++	= 0;
+      line	= next_deescape(&scan, '\\');
     }
-  /* append additional arguments to commandline	*/
+  /* append user arguments to commandline	*/
   for (i=1; ++i<argc; )
     args_add(&args, argv[i]);
 
