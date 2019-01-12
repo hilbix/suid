@@ -250,7 +250,7 @@ main(int argc, char **argv)
            "\t          Escape ':' with '\\:' and '\\' with '\\\\:'\n"
            "\t          'a:b'  must be written as 'a\\:b'\n"
            "\t          'a\\b'  can  be written as 'a\\\\:b'\n"
-           "\t          'a\\:b' must  be written as 'a\\\\:\\:b'\n"
+           "\t          'a\\:b' must be written as 'a\\\\:\\:b'\n"
            "\n"
            "\t!opt:option:value:!flags:dir:/path/to/checkscript:args..\n"
            "\toption/value: optional, see list of options above\n"
