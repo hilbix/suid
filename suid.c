@@ -232,7 +232,7 @@ main(int argc, char **argv)
   struct scan		scan = { 0 };
   struct args		args = { 0 }, env = { 0 };
   char			*cmd, *pass, *user, *group, *minmax, *dir, *line, *cwd;
-  int			uid, gid, ouid, ogid;
+  int			uid, gid, ouid, ogid, euid, egid;
   struct passwd		*pw;
   int			i, minarg, maxarg, debug, allow_shellshock;
 
@@ -306,12 +306,14 @@ main(int argc, char **argv)
 
   ouid	= getuid();
   ogid	= getgid();
+  euid	= geteuid();
+  egid	= getegid();
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process user
    */
   if (!*user)
-    pw	= getpwuid(geteuid());
+    pw	= getpwuid(euid);
   else if (!strcmp(user, "*"))
     pw	= getpwuid(ouid);
   else if (getint(user, &uid))
@@ -328,7 +330,7 @@ main(int argc, char **argv)
    * process group
    */
   if (!*group)
-    gid	= getegid();
+    gid	= egid;
   else if (!strcmp(group, "*"))
     gid = ogid;
   else if (!strcmp(group, "="))
@@ -343,11 +345,21 @@ main(int argc, char **argv)
       gid	= gr->gr_gid;
     }
 
-  /* Apply the new uid/gid	*/
-  if (setgid(gid))
+  /* Apply the new uid/gid.
+   * Only apply the new ID, if it is NOT already the effective ID.
+   * This means, we can move "suid" things into the cloned process.
+   * (this is no security problem, as we are already privileged)
+   */
+  if (egid != gid && setgid(gid))
     OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop group priv", OOPS_I, gid, NULL);
-  if (setuid(uid))
+  if (euid != uid && setuid(uid))
     OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop user priv", OOPS_I, uid, NULL);
+  /* note: according to the manual following is the case:
+   *
+   * When euid is privileged, setuid() drops all privileges (uid, euid and saved uid).
+   * Only if euid is not privileged, setuid() allows to regain saved privileges again.
+   * As euid is always privileged in our case, setuid() completely drops the privileges.
+   */
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process minmax (everything after flags)
