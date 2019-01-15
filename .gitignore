@@ -2,3 +2,4 @@
 !/suid.conf.d/
 /*.o
 /suid
+/linuxid
