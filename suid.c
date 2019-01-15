@@ -25,12 +25,39 @@
 #define	CONFEXT	".conf"
 #define	PATH	"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
+#if 0
+#define	DP(X...)	do { dbprintf(__FILE__, __LINE__, __FUNCTION__, X); } while (0)
+static void
+dbprintf(const char *file, int line, const char *fn, const char *s, ...)
+{
+  va_list	list;
+
+  fprintf(stderr, "[%s:%d: %s", file, line, fn);
+  va_start(list, s);
+  vfprintf(stderr, s, list);
+  va_end(list);
+  fprintf(stderr, "]\n");
+  fflush(stderr);
+}
+#else
+#define	DP(...)	do { ; } while(0)
+#endif
+
+/* Simple line scanner with deescapement ******************************/
+
 struct scan
   {
     char		*pos;
     struct linereader	l;
     char		file[FILENAME_MAX];
+    const char		*cmd;
   };
+
+static void
+strmove(char *to, char *from)
+{
+  while ((*to++ = *from++)!=0);
+}
 
 /* next arg with deescapement with ESC, but returns NULL on EOL
  * If ESC==0 no deescapement happens.
@@ -56,11 +83,11 @@ next_deescape(struct scan *scan, char esc)
           return ptr;
         }
       if (ptr-1<=scan->pos || ptr[-2]!=esc)
-        strcpy(ptr-1, ptr);		/* \: seen but not \\:, remove the \	*/
+        strmove(ptr-1, ptr);		/* \: seen but not \\:, remove the \	*/
       else
         {
           ptr -= 2;
-          strcpy(ptr, ptr+3);		/* \\: seen, remove it completely	*/
+          strmove(ptr, ptr+3);		/* \\: seen, remove it completely	*/
         }
       /* loop after deescapement */
       scan->pos	= ptr;
@@ -83,6 +110,8 @@ next(struct scan *scan)
     OOPS(scan->file, OOPS_I, scan->l.linenr, "malformed line", NULL);
   return ptr;
 }
+
+/* Environment ********************************************************/
 
 /* return 1 if shellshock pattern found
  */
@@ -107,7 +136,7 @@ populate_env(struct args *env, int allow_shellshock, int uid, int gid, const cha
   /* populate SUID* variables	*/
   args_addf(env, "SUIDUID=%d", uid);
   args_addf(env, "SUIDGID=%d", gid);
-  if (cwd)
+  if (cwd && !shellshock(cwd))
     args_addf(env, "SUIDPWD=%s", cwd);
 
   /* migrate current environment to SUID_	*/
@@ -119,6 +148,8 @@ populate_env(struct args *env, int allow_shellshock, int uid, int gid, const cha
     }
 }
 
+/* /etc/suid.conf and /etc/suid.conf.d/ *******************************/
+
 static int
 checkown(const char *path)
 {
@@ -128,15 +159,15 @@ checkown(const char *path)
     return 1;
   if (st.st_uid)
     OOPS(path, "wrong ownership", OOPS_I, (int)st.st_uid, NULL);
-  if (st.st_uid || st.st_gid)
+  if (st.st_gid)
     OOPS(path, "wrong group", OOPS_I, (int)st.st_gid, NULL);
   if (st.st_mode & 022)
-    OOPS(path, "wrong mode", OOPS_O, st.st_mode, NULL);
+    OOPS(path, "wrong mode", OOPS_O, (unsigned)st.st_mode, NULL);
   return 0;
 }
 
 static char *
-scan_file(struct scan *scan, const char *cmd)
+scan_file(struct scan *scan)
 {
   char	*line;
 
@@ -149,7 +180,7 @@ scan_file(struct scan *scan, const char *cmd)
       if (*line == '#' || !*line)
         continue;
       next(scan);
-      if (!strcmp(cmd, line))
+      if (!strcmp(scan->cmd, line))
         break;
     }
   if (linereader_end(&scan->l))
@@ -173,14 +204,14 @@ conf_filter(const struct dirent *dp)
 }
 
 static int
-find_cmd(struct scan *scan, const char *cmd)
+find_cmd(struct scan *scan)
 {
   struct dirent	**ent;
   int		n;
 
   /* check /etc/suid.conf	*/
   strcpy(scan->file, CONF);
-  if (scan_file(scan, cmd))
+  if (scan_file(scan))
     return 0;	/* found	*/
 
   if (checkown(CONFDIR))
@@ -192,37 +223,180 @@ find_cmd(struct scan *scan, const char *cmd)
   for (; --n>=0; ent++)
     {
       snprintf(scan->file, sizeof scan->file, "%s/%s", CONFDIR, (*ent)->d_name);
-      if (scan_file(scan, cmd))
+      if (scan_file(scan))
         return 0;	/* found	*/
     }
 
   return 1;	/* not found	*/
 }
 
+/* Flags **************************************************************/
+
 /* set flags given on argument list in minmax:
  * for each flag in flags there must be an (int *) arg.
- * The arg is set to 1 if flag is present, 0 otherwise.
+ * The arg is set to !=0 if flag is present, 0 otherwise.
  * Returns the next position in minmax (end of flags).
  */
 static char *
-get_flags(char *minmax, const char *flags, ...)
+get_flags(struct scan *scan, char *minmax, const char *flags, ...)
 {
   va_list	list;
   int		*i;
+  const char	*tmp;
 
+  DP("(%p, %s, %s)", scan, minmax, flags);
   va_start(list, flags);
-  for (; *flags; flags++)
+  for (tmp=flags; *tmp; tmp++)
+    *va_arg(list, int *)	= 0;
+  va_end(list);
+  va_start(list, flags);
+  for (tmp=flags; *tmp; tmp++)
     {
-      i		= va_arg(list, int *);
-      *i	= 0;
-      if (*minmax == *flags)
+      i = va_arg(list, int *);
+      if (*minmax == *tmp)
         {
+          if (*i)
+            OOPS(scan->file, OOPS_I, scan->l.linenr, scan->cmd, "incompatible flag", OOPS_C, *i, OOPS_C, *tmp, NULL);
           minmax++;
-          *i	= 1;
+          *i	= *tmp;
         }
     }
+  va_end(list);
   return minmax;
 }
+
+/* Modifiers **********************************************************/
+
+enum suid_type
+  {
+    TYPE_NORMAL,
+    TYPE_SUID,
+  };
+
+static int
+modifier(const char *cmd, enum suid_type *type)
+{
+  DP("('%s', %d)", cmd, *type);
+  if (*type == TYPE_NORMAL)
+    {
+      if (!strcmp(cmd, "suid"))  { *type = TYPE_SUID;  return 1; }
+    }
+  DP("() no");
+  return 0;
+}
+
+/* Helpers ************************************************************/
+
+static char *
+file_name(char *s)
+{
+  char	*tmp;
+
+  tmp	= strrchr(s, '/');
+  return tmp ? tmp+1 : s;
+}
+
+static int
+checkfile(int uid, int gid, struct args *args, int insecure)
+{
+  struct stat	st;
+  int		f, d;
+  char		*dir;
+  char		*name, *orig;
+
+  DP("(%d,%d,%p,%d)", uid, gid, args, insecure);
+  /* calculate everything about what we try to execute	*/
+  orig	= args->args[0];
+  if ((dir=realpath(orig, NULL))==0 || (name=file_name(dir))==dir || *dir!='/')
+    OOPS(orig, "path resolution failed", dir, NULL);
+  args->args[0]	= stralloc(dir);	/* return, what needs to be executed	*/
+  name[-1]	= 0;
+
+  DP("() dir '%s'", dir);
+  /* be careful what to access	*/
+  d	= openat(AT_FDCWD, dir, O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+  if (d<0)
+    OOPS(dir, "cannot access directory", NULL);
+
+  DP("() file '%s'", name);
+  f	= openat(d, name, O_RDONLY|O_NOFOLLOW);
+  if (f<0)
+    OOPS(orig, "cannot access file", name, NULL);
+
+  if (insecure)
+    goto insecure_return;
+
+  /* check the file entry	*/
+  if (fstat(f, &st))
+    OOPS(orig, "cannot stat", NULL);
+
+  if ((st.st_mode & S_IFMT)!=S_IFREG)
+    OOPS(orig, "not a regular file", NULL);
+  if (st.st_mode & S_IWOTH)
+    OOPS(orig, "is globally writeable", OOPS_O, (unsigned)st.st_mode, NULL);
+  if (st.st_uid && st.st_uid!=uid)
+    OOPS(orig, "wrong user id", OOPS_I, (int)st.st_uid, "expected", OOPS_I, uid, NULL);
+  if ((st.st_mode & S_IWGRP) && st.st_gid && st.st_gid!=gid)
+    OOPS(orig, "wrong group id", OOPS_I, (int)st.st_gid, "expected", OOPS_I, gid, NULL);
+
+  if (fstat(d, &st))
+    OOPS(dir, "cannot stat directory", NULL);
+
+  for (;;)
+    {
+      struct stat	st2;
+      int		p;
+
+      if ((st.st_mode & S_IFMT)!=S_IFDIR)
+        OOPS(dir, "not a directory", NULL);	/* WTF? Just to be sure ..	*/
+      if ((st.st_mode & (S_IWOTH|S_ISVTX))==S_IWOTH)
+        OOPS(dir, "is globally writeable", OOPS_O, (unsigned)st.st_mode, NULL);
+      if (st.st_uid && st.st_uid!=uid)
+        OOPS(dir, "wrong user id", OOPS_I, (int)st.st_uid, "expected", OOPS_I, uid, NULL);
+      if ((st.st_mode & S_IWGRP) && st.st_gid && st.st_gid!=gid)
+        OOPS(dir, "wrong group id", OOPS_I, (int)st.st_gid, "expected", OOPS_I, gid, NULL);
+
+      if (name==dir)
+        break;
+
+      p	= openat(d, "..", O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+      if (p<0)
+        OOPS(dir, "cannot access parent directory", NULL);
+      close(d);
+
+      if (fstat(p, &st2))
+        OOPS(dir, "cannot stat parent directory", NULL);
+      close(p);
+
+      name	= file_name(dir);
+      name--;
+      name[name==dir ? 1 : 0]	= 0;
+
+      DP("() parent '%s' name '%s'", dir, name);
+
+      d	= openat(AT_FDCWD, dir, O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+      if (d<0)
+        OOPS(dir, "cannot access directory", NULL);
+      if (fstat(d, &st))
+        OOPS(dir, "cannot stat directory", NULL);
+
+      if (st.st_dev  != st2.st_dev  ||
+          st.st_ino  != st2.st_ino  ||
+          st.st_mode != st2.st_mode ||
+          st.st_uid  != st2.st_uid  ||
+          st.st_gid  != st2.st_gid)
+        OOPS(dir, "directory stat mismatch on path and parent of", name, NULL);
+    }
+
+insecure_return:
+  close(d);
+  free(dir);
+  DP("() %d", f);
+  return f;
+
+}
+
+/* Main ***************************************************************/
 
 /* This routine is too long
  */
@@ -234,7 +408,10 @@ main(int argc, char **argv)
   char			*cmd, *pass, *user, *group, *minmax, *dir, *line, *cwd;
   int			uid, gid, ouid, ogid, euid, egid;
   struct passwd		*pw;
-  int			i, minarg, maxarg, debug, allow_shellshock;
+  int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock;
+  enum suid_type	suid_type;
+  int			runfd;
+  char			*orig;
 
   if (argc<2)
     {
@@ -271,7 +448,8 @@ main(int argc, char **argv)
 #endif
 
   /* scan /etc/suid.conf and /etc/suid.conf.d/	*/
-  if (find_cmd(&scan, cmd))
+  scan.cmd	= cmd;
+  if (find_cmd(&scan))
     {
       /* Avoid to print user defined parameters, so not output argv[1] here	*/
       OOPS(CONF, "command not found", NULL);
@@ -295,9 +473,9 @@ main(int argc, char **argv)
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * early process optional flags, which are before min-max (flags must be sorted ABC):
-   * DS
+   * DIS
    */
-  minmax = get_flags(minmax, "DS", &debug, &allow_shellshock);
+  minmax = get_flags(&scan, minmax, "CDIFPS", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock);
 
   /* get current settings	*/
   cwd	= getcwd(NULL, 0);
@@ -345,22 +523,6 @@ main(int argc, char **argv)
       gid	= gr->gr_gid;
     }
 
-  /* Apply the new uid/gid.
-   * Only apply the new ID, if it is NOT already the effective ID.
-   * This means, we can move "suid" things into the cloned process.
-   * (this is no security problem, as we are already privileged)
-   */
-  if (egid != gid && setgid(gid))
-    OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop group priv", OOPS_I, gid, NULL);
-  if (euid != uid && setuid(uid))
-    OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop user priv", OOPS_I, uid, NULL);
-  /* note: according to the manual following is the case:
-   *
-   * When euid is privileged, setuid() drops all privileges (uid, euid and saved uid).
-   * Only if euid is not privileged, setuid() allows to regain saved privileges again.
-   * As euid is always privileged in our case, setuid() completely drops the privileges.
-   */
-
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process minmax (everything after flags)
    */
@@ -371,6 +533,8 @@ main(int argc, char **argv)
       minmax++;
       maxarg	= fetchint(&minmax, -1);
     }
+  while (*minmax && *minmax==' ')
+    minmax++;
   if (*minmax)
     OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "wrong minmax", minmax, NULL);
 
@@ -383,12 +547,52 @@ main(int argc, char **argv)
    *
    * De-Escape \: to : and \\: to nothing
    */
+  suid_type	= TYPE_NORMAL;
+  do
+    {
+      args.n	= 0;
+      while (*line==' ') line++;
+      args_add(&args, line);
+      line	= next_deescape(&scan, '\\');
+    } while (line && modifier(args.args[0], &suid_type));
   while (line)
     {
       args_add(&args, line);
       line	= next_deescape(&scan, '\\');
     }
-  /* append user arguments to commandline	*/
+  if (args.n<1)
+    OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "missing command", NULL);
+
+  /* Apply the new uid/gid for normal commands.
+   * On "suid" commands, apply it such, as if command was invoked with suid flags.
+   */
+  switch (suid_type)
+    {
+    case TYPE_SUID:
+      if (egid != gid && setegid(gid))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot set effective group", OOPS_I, gid, NULL);
+      if (euid != uid && seteuid(gid))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot set effective user", OOPS_I, uid, NULL);
+      /* we can now switch between getuid() (caller) and geteuid() (config) as in SUID programs
+       * using seteuid() - you can use setuid() in case getuid()/geteuid() is not root (0)
+       */
+      break;
+
+    case TYPE_NORMAL:
+      if (setgid(gid))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop group priv", OOPS_I, gid, NULL);
+      if (setuid(uid))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop user priv", OOPS_I, uid, NULL);
+      break;
+    }
+  /* note: according to the manual following is the case:
+   *
+   * When euid is privileged, setuid() drops all privileges (uid, euid and saved uid).
+   * Only if euid is not privileged, setuid() allows to regain saved privileges again.
+   * As euid is always privileged in our case, setuid() completely drops the privileges.
+   */
+
+  /* append user arguments from commandline	*/
   for (i=1; ++i<argc; )
     args_add(&args, argv[i]);
 
@@ -403,6 +607,8 @@ main(int argc, char **argv)
       for (i=0; args.args[i]; i++)
         printf("%4d: %s\n", i, args.args[i]);
     }
+  else if (cmd[0]=='!')	/* Disallow direct call to Options, except when debugging */
+    OOPS(argv[0], "command must start with '!'", NULL);
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process dir
@@ -410,11 +616,41 @@ main(int argc, char **argv)
   if (*dir && chdir(dir))
     OOPS(dir, "cannot change directory", NULL);
 
+  /* check that command is safe to use
+   *
+   * Command must either be owned by root,
+   * or by the effective user.
+   *
+   * Directories, which contain the command, must fulfill the same.
+   * (We can stop searching if we hit a 755 root:root directory.)
+   */
+  orig	= args.args[0];
+  runfd	= checkfile(uid, gid, &args, insecure);
+
+  /* args.args[0] was populated with the full path
+   * of the file which is referenced by runfd
+   */
+  switch (suid_cmd)
+    {
+    case 0:	/* no flag, switch back to orig	*/
+      args.args[0]	= orig;
+      break;
+    case 'C':	/* use cmd from commandline as arg0	*/
+      args.args[0]	= cmd;
+      break;
+    case 'F':	/* only use the file name portion for arg0	*/
+      args.args[0]	= file_name(args.args[0]);
+    case 'P':	/* use the full path == no change	*/
+      break;
+    default:	/* just catch programming errors	*/
+      FATAL(suid_cmd);
+    }
+
   /* fill target environment	*/
   populate_env(&env, allow_shellshock, ouid, ogid, cwd);
 
   /* invoke command	*/
-  execve(args.args[0], args.args, env.args);
+  fexecve(runfd, args.args, env.args);
   OOPS("execve() failed", args.args[0], NULL);
   return 127;	/* resemble shell	*/
 }
