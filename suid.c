@@ -574,10 +574,10 @@ main(int argc, char **argv)
     {
     case TYPE_ROOT:
       if (!uid || !gid)
-        OOPS(scan.file, OOPS_I, scan.l.linenr, "'root:' needs nonprivileged user/group", OOPS_I, uid, NULL);
-      if (setegid(gid) || setgid(gid) || setegid(0))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "'root:' needs nonprivileged user/group, not", OOPS_I, uid, OOPS_I, gid, NULL);
+      if (setregid(gid, egid))
         OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot move to group", OOPS_I, gid, NULL);
-      if (seteuid(uid) || setuid(uid) || seteuid(0))
+      if (setreuid(uid, euid))
         OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot move to user", OOPS_I, uid, NULL);
       break;
 
