@@ -45,6 +45,28 @@ Why not `sudo`?
 - `suid` allows to call (and control) SUID-aware programs without need to set SUID flags in filesystem
 
 
+How to support a suid capable program?
+
+- First: It must not have SUID bits set in filesystem.
+- Second: It should be owned by `root:root` and have mode `755` or even less.
+- Third: in `/etc/suid.conf` configure it as usual.
+- Prefix the `/path/to/bin` with `suid:`, that's all.
+- Example: `socklinger80::::::suid:/usr/local/bin/socklinger:outeripv4address\\:80:./miniweb.sh`
+  - `/usr/local/bin/socklinger` has no SUID flag set.
+  - [`socklinger`](https://github.com/hilbix/socklinger/) is a suid capable program
+  - So it will drop privileges after listening on the privileged port.
+  - Each incoming connection then will be served via `./miniweb.sh` in the current directory.
+  - UID is the UID of the caller
+- **Security-Notes:**
+  - If you leave away the `suid:` then `./miniweb.sh` would be served as root.
+  - This is a very bad example, as anybody can call this command as shown.
+- Example: `socklinger80::nobody:nogroup:::root:/usr/local/bin/socklinger:outeripv4address\\:80:/srv/miniweb.sh`
+  - `/usr/local/bin/socklinger` has no SUID flag set.
+  - [`socklinger`](https://github.com/hilbix/socklinger/) is a suid capable program
+  - So it will drop privileges after listening on the privileged port.
+  - `root:` is a convenience to switch the user context to `nobody:nogroup` in that case.
+  - So when `socklinger` drops privileges, it will become `nobody:nogroup`.
+
 Why is `:` escaped to `\\:\:` and arguments should be followed by `\\:`?
 
 - Escaping is not particular human friendly, but it is easy to script and parse this way.
@@ -85,12 +107,14 @@ Is `suid` secure?
 
 - `suid` does not automagically secure your wrappers in `/etc/suid.conf`, so do not use insecure directories like `/tmp/` (dirs with write access only from `root` should be ok).
 
+- Secure by default.  If there is an insecure option added, this insecurity will not be switched on by default.  Never.
+
 
 Other conf?
 
 - For security reasons `suid` configuration is kept in `/etc/suid.conf` and files `/etc/suid.conf.d/*.conf`
 
-- It would be very difficult to allow several different `suid` wrappers with autoconfig.  So there is only one supported.
+- It would be very difficult to allow several different `suid` wrappers with autoconfig.  So there is only one supported, yet.
 
 
 `Missing privilege separation directory: /var/run/sshd`
