@@ -59,13 +59,10 @@ How to support a suid capable program?
   - UID is the UID of the caller
 - **Security-Notes:**
   - If you leave away the `suid:` then `./miniweb.sh` would be served as root.
-  - This is a very bad example, as anybody can call this command as shown.
-- Example: `socklinger80::nobody:nogroup:::root:/usr/local/bin/socklinger:outeripv4address\\:80:/srv/miniweb.sh`
-  - `/usr/local/bin/socklinger` has no SUID flag set.
-  - [`socklinger`](https://github.com/hilbix/socklinger/) is a suid capable program
-  - So it will drop privileges after listening on the privileged port.
-  - `root:` is a convenience to switch the user context to `nobody:nogroup` in that case.
-  - So when `socklinger` drops privileges, it will become `nobody:nogroup`.
+  - This is a very bad example, as anybody can call this command as shown within his own context.
+- Example: `socklinger80::nobody:nogroup::/:root:/usr/local/bin/socklinger:outeripv4address\\:80:/srv/miniweb.sh`
+  - `root:` is a convenience to preseed the unprivileged user to `nobody:nogroup` in that case.
+  - When `socklinger` drops privileges, it will become `nobody:nogroup` now.
 
 Why is `:` escaped to `\\:\:` and arguments should be followed by `\\:`?
 
