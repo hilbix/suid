@@ -319,7 +319,7 @@ checkfile(int uid, int gid, struct args *args, int insecure)
     OOPS(dir, "cannot access directory", NULL);
 
   DP("() file '%s'", name);
-  f	= openat(d, name, O_RDONLY|O_NOFOLLOW);
+  f	= openat(d, name, O_RDONLY|O_NOFOLLOW|O_CLOEXEC);
   if (f<0)
     OOPS(orig, "cannot access file", name, NULL);
 
@@ -410,7 +410,7 @@ main(int argc, char **argv)
   struct passwd		*pw;
   int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock;
   enum suid_type	suid_type;
-  int			runfd;
+  int			runfd, off;
   char			*orig;
 
   if (argc<2)
@@ -423,7 +423,7 @@ main(int argc, char **argv)
            "\tpw:       currently must be empty ('')\n"
            "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
            "\tminmax:   [CDIFPS][minargs][-[maxargs]]\n"
-           "\t          Debug/Insecure/Shellshock arg0:=C/F/P\n"
+           "\t          Debug/Insecure/Shellshock arg0:=C/F/N/P\n"
            "\targs..:   optional list of ':' separated args\n"
            "\t          '\\:' escapes ':', '\\\\:' is swallowed\n"
            "\t          (Use '\\\\:' to disambiguate)\n"
@@ -471,12 +471,12 @@ main(int argc, char **argv)
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * early process optional flags, which are before min-max (flags must be sorted ABC):
-   * Cmd/Filename/Path defines how arg0 is set, default is what is in the config
+   * Cmd/Filename/Next/Path defines how arg0 is set, default is what is in the config
    * Debug
    * Insecure
    * ShellShock
    */
-  minmax = get_flags(&scan, minmax, "CDIFPS", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock);
+  minmax = get_flags(&scan, minmax, "CDIFNPS", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &suid_cmd, &allow_shellshock);
 
   /* get current settings	*/
   cwd	= getcwd(NULL, 0);
@@ -631,17 +631,21 @@ main(int argc, char **argv)
   /* args.args[0] was populated with the full path
    * of the file which is referenced by runfd
    */
+  off	= 0;
   switch (suid_cmd)
     {
     case 0:	/* no flag, switch back to orig	*/
       args.args[0]	= orig;
       break;
-    case 'C':	/* use cmd from commandline as arg0	*/
+    case 'C':	/* use Cmd from commandline as arg0	*/
       args.args[0]	= cmd;
       break;
-    case 'F':	/* only use the file name portion for arg0	*/
+    case 'F':	/* only use the File name portion for arg0	*/
       args.args[0]	= file_name(args.args[0]);
-    case 'P':	/* use the full path == no change	*/
+    case 'P':	/* use the full Path == no change	*/
+      break;
+    case 'N':	/* use the "Next" arg (ignore first arg)	*/
+      off	= 1;
       break;
     default:	/* just catch programming errors	*/
       FATAL(suid_cmd);
@@ -651,7 +655,7 @@ main(int argc, char **argv)
   populate_env(&env, allow_shellshock, ouid, ogid, cwd);
 
   /* invoke command	*/
-  fexecve(runfd, args.args, env.args);
+  fexecve(runfd, args.args+off, env.args);
   OOPS("execve() failed", args.args[0], NULL);
   return 127;	/* resemble shell	*/
 }
