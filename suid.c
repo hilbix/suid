@@ -271,6 +271,7 @@ enum suid_type
   {
     TYPE_NORMAL,
     TYPE_SUID,
+    TYPE_ROOT,
   };
 
 static int
@@ -280,6 +281,7 @@ modifier(const char *cmd, enum suid_type *type)
   if (*type == TYPE_NORMAL)
     {
       if (!strcmp(cmd, "suid"))  { *type = TYPE_SUID;  return 1; }
+      if (!strcmp(cmd, "root"))  { *type = TYPE_ROOT;  return 1; }
     }
   DP("() no");
   return 0;
@@ -429,6 +431,7 @@ main(int argc, char **argv)
            "\t          (Use '\\\\:' to disambiguate)\n"
            "\n"
            "\t'suid:' before '/path/to/bin' for suid-capable bin.\n"
+           "\t'root:' to call as root and drop to the given user.\n"
            "\tClean Env: SUIDUID/SUIDGID/SUIDPWD/TERM.  Others\n"
            "\tare prefixed with SUID_ (Shellshock save unless S)\n"
            "\n"
@@ -569,6 +572,15 @@ main(int argc, char **argv)
    */
   switch (suid_type)
     {
+    case TYPE_ROOT:
+      if (!uid || !gid)
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "'root:' needs nonprivileged user/group", OOPS_I, uid, NULL);
+      if (setegid(gid) || setgid(gid) || setegid(0))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot move to group", OOPS_I, gid, NULL);
+      if (seteuid(uid) || setuid(uid) || seteuid(0))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot move to user", OOPS_I, uid, NULL);
+      break;
+
     case TYPE_SUID:
       if (egid != gid && setegid(gid))
         OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot set effective group", OOPS_I, gid, NULL);
