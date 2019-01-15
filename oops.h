@@ -152,6 +152,19 @@ re_alloc(void *buf, size_t len)
   return buf;
 }
 
+static char *
+stralloc(const char *s)
+{
+  size_t	len;
+  char		*buf;
+
+  len	= strlen(s)+1;
+  buf	= re_alloc(NULL, len);
+  strncpy(buf, s, len);
+  FATAL(buf[len-1]);
+  return buf;
+}
+
 static int
 getint(const char *s, int *val)
 {
