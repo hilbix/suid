@@ -1,4 +1,4 @@
-/* Run commands with generic SUID
+/* Generic SUID (supports all programs, even SUID compatible ones)
  *
  * This Works is placed under the terms of the Copyright Less License,
  * see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
@@ -419,23 +419,20 @@ main(int argc, char **argv)
       OOPS("Usage: suid command [args..]\n"
            "\t\tVersion " SUID_VERSION " compiled " __DATE__ "\n"
            "\tConfig is in file " CONF " or dir " CONFDIR "/*" CONFEXT ":\n"
-           "\tcommand:pw:user:grp:minmax:dir:/path/to/binary:args..\n"
+           "\tcommand:pw:user:grp:minmax:dir:/path/to/bin:args..\n"
            "\tpw:       currently must be empty ('')\n"
            "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
-           "\tminmax:   [D][S][minargs][-[maxargs]]\n"
-           "\targs..:   optional list of : separated args\n"
-           "\t          Escape ':' with '\\:' and '\\' with '\\\\:'\n"
-           "\t          'a:b'  must be written as 'a\\:b'\n"
-           "\t          'a\\b'  can  be written as 'a\\\\:b'\n"
-           "\t          'a\\:b' must be written as 'a\\\\:\\:b'\n"
+           "\tminmax:   [CDIFPS][minargs][-[maxargs]]\n"
+           "\t          Debug/Insecure/Shellshock arg0:=C/F/P\n"
+           "\targs..:   optional list of ':' separated args\n"
+           "\t          '\\:' escapes ':', '\\\\:' is swallowed\n"
+           "\t          (Use '\\\\:' to disambiguate)\n"
            "\n"
-           "\t!opt:option:value:!flags:dir:/path/to/checkscript:args..\n"
-           "\toption/value: optional, see list of options above\n"
-           "\t!flags:    ![D][S]\n"
-           "\tIf binary is given and fails, the whole process fails\n"
+           "\t'suid:' before '/path/to/bin' for suid-capable bin.\n"
+           "\tClean Env: SUIDUID/SUIDGID/SUIDPWD/TERM.  Others\n"
+           "\tare prefixed with SUID_ (Shellshock save unless S)\n"
            "\n"
-           "\tsuid usually returns the value of the binary, except:\n"
-           "\t125 for suid failure (like this usage)\n"
+           "\tsuid usually returns the value of the bin, except:\n"
            "\t126 if option fails (see: bash -c /dev/null)\n"
            "\t127 if command not found (see: bash -c /notfound)\n"
            , NULL);
@@ -467,13 +464,17 @@ main(int argc, char **argv)
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * check pw
+   * Empty for now.  In future you list Options (like Namespaces) here
    */
   if (*pass)
     OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "pw not yet supported", pass, NULL);
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * early process optional flags, which are before min-max (flags must be sorted ABC):
-   * DIS
+   * Cmd/Filename/Path defines how arg0 is set, default is what is in the config
+   * Debug
+   * Insecure
+   * ShellShock
    */
   minmax = get_flags(&scan, minmax, "CDIFPS", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock);
 
