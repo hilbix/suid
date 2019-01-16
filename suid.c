@@ -270,21 +270,32 @@ get_flags(struct scan *scan, char *minmax, const char *flags, ...)
 enum suid_type
   {
     TYPE_NORMAL,
-    TYPE_SUID,
-    TYPE_ROOT,
+    TYPE_SUID,	/* Call if it has SUID flags	*/
+    TYPE_ROOT,	/* As TYPE_SUID, but with modified original UID/GID */
+    TYPE_SH,	/* /bin/sh does not support suid	*/
+    TYPE_BASH,	/* As TYPE_SH, but supports modified arg0	*/
   };
 
-static int
-modifier(const char *cmd, enum suid_type *type)
+static enum suid_type
+modifier(struct args *args, enum suid_type type)
 {
-  DP("('%s', %d)", cmd, *type);
-  if (*type == TYPE_NORMAL)
-    {
-      if (!strcmp(cmd, "suid"))  { *type = TYPE_SUID;  return 1; }
-      if (!strcmp(cmd, "root"))  { *type = TYPE_ROOT;  return 1; }
-    }
-  DP("() no");
-  return 0;
+  if (args->n!=1)
+    return type;
+
+  const char	*cmd	= args->args[0];
+
+  DP("('%p', %d) n=%d cmd='%s'", args, type, args->n, cmd);
+
+  if (     !strcmp(cmd, "suid"))	type	= TYPE_SUID;
+  else if (!strcmp(cmd, "root"))	type	= TYPE_ROOT;
+  else if (!strcmp(cmd, "sh"  ))	type	= TYPE_SH;
+  else if (!strcmp(cmd, "bash"))	type	= TYPE_BASH;
+  else
+    return type;
+
+  args->n	= 0;
+  DP("()=%d n=%d", type, args->n);
+  return type;
 }
 
 /* Helpers ************************************************************/
@@ -299,7 +310,7 @@ file_name(char *s)
 }
 
 static int
-checkfile(int uid, int gid, struct args *args, int insecure)
+checkfile(int uid, int gid, struct args *args, int insecure, int wrap)
 {
   struct stat	st;
   int		f, d;
@@ -316,7 +327,7 @@ checkfile(int uid, int gid, struct args *args, int insecure)
 
   DP("() dir '%s'", dir);
   /* be careful what to access	*/
-  d	= openat(AT_FDCWD, dir, O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
+  d	= openat(AT_FDCWD, dir, O_RDONLY|O_DIRECTORY|O_CLOEXEC|(wrap ? 0 : O_NOFOLLOW));
   if (d<0)
     OOPS(dir, "cannot access directory", NULL);
 
@@ -410,9 +421,9 @@ main(int argc, char **argv)
   char			*cmd, *pass, *user, *group, *minmax, *dir, *line, *cwd;
   int			uid, gid, ouid, ogid, euid, egid;
   struct passwd		*pw;
-  int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock;
+  int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock, wrap;
   enum suid_type	suid_type;
-  int			runfd, off;
+  int			runfd;
   char			*orig;
 
   if (argc<2)
@@ -425,13 +436,15 @@ main(int argc, char **argv)
            "\tpw:       currently must be empty ('')\n"
            "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
            "\tminmax:   [CDIFPS][minargs][-[maxargs]]\n"
-           "\t          Debug/Insecure/Shellshock arg0:=C/F/N/P\n"
+           "\t          Debug/Insecure/Shellshock/Wrap arg0:=C/F/N/P\n"
            "\targs..:   optional list of ':' separated args\n"
            "\t          '\\:' escapes ':', '\\\\:' is swallowed\n"
            "\t          (Use '\\\\:' to disambiguate)\n"
            "\n"
            "\t'suid:' before '/path/to/bin' for suid-capable bin.\n"
            "\t'root:' to call as root and drop to the given user.\n"
+           "\t'sh:' to feed though /bin/sh (no arg0 handling)\n"
+           "\t'bash:' to feed though /bin/bash (allows arg0 handling)\n"
            "\tClean Env: SUIDUID/SUIDGID/SUIDPWD/TERM.  Others\n"
            "\tare prefixed with SUID_ (Shellshock save unless S)\n"
            "\n"
@@ -478,8 +491,9 @@ main(int argc, char **argv)
    * Debug
    * Insecure
    * ShellShock
+   * Wrap
    */
-  minmax = get_flags(&scan, minmax, "CDIFNPS", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &suid_cmd, &allow_shellshock);
+  minmax = get_flags(&scan, minmax, "CDIFNPSW", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &suid_cmd, &allow_shellshock, &wrap);
 
   /* get current settings	*/
   cwd	= getcwd(NULL, 0);
@@ -552,17 +566,13 @@ main(int argc, char **argv)
    * De-Escape \: to : and \\: to nothing
    */
   suid_type	= TYPE_NORMAL;
-  do
-    {
-      args.n	= 0;
-      while (*line==' ') line++;
-      args_add(&args, line);
-      line	= next_deescape(&scan, '\\');
-    } while (line && modifier(args.args[0], &suid_type));
   while (line)
     {
+      if (!args.n)
+        while (*line==' ') line++;
       args_add(&args, line);
       line	= next_deescape(&scan, '\\');
+      suid_type	= modifier(&args, suid_type);
     }
   if (args.n<1)
     OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "missing command", NULL);
@@ -572,6 +582,8 @@ main(int argc, char **argv)
    */
   switch (suid_type)
     {
+    default:	FATAL(suid_type);
+
     case TYPE_ROOT:
       if (!uid || !gid)
         OOPS(scan.file, OOPS_I, scan.l.linenr, "'root:' needs nonprivileged user/group, not", OOPS_I, uid, OOPS_I, gid, NULL);
@@ -591,6 +603,8 @@ main(int argc, char **argv)
        */
       break;
 
+    case TYPE_SH:
+    case TYPE_BASH:
     case TYPE_NORMAL:
       if (setgid(gid))
         OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot drop group priv", OOPS_I, gid, NULL);
@@ -621,7 +635,7 @@ main(int argc, char **argv)
         printf("%4d: %s\n", i, args.args[i]);
     }
   else if (cmd[0]=='!')	/* Disallow direct call to Options, except when debugging */
-    OOPS(argv[0], "command must start with '!'", NULL);
+    OOPS(argv[0], "command must not start with '!'", NULL);
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process dir
@@ -638,36 +652,41 @@ main(int argc, char **argv)
    * (We can stop searching if we hit a 755 root:root directory.)
    */
   orig	= args.args[0];
-  runfd	= checkfile(uid, gid, &args, insecure);
+  runfd	= checkfile(uid, gid, &args, insecure, wrap);
 
   /* args.args[0] was populated with the full path
    * of the file which is referenced by runfd
    */
-  off	= 0;
   switch (suid_cmd)
     {
-    case 0:	/* no flag, switch back to orig	*/
-      args.args[0]	= orig;
+    default:	FATAL(suid_cmd); 					/* catch programming errors			*/
+    case 0:	args.args[0]	= orig;				break;	/* (no flag) switch back to orig		*/
+    case 'C':	args.args[0]	= cmd;				break;	/* use (C)md from commandline as arg0		*/
+    case 'F':	args.args[0]	= file_name(args.args[0]);	break;	/* only use the (F)ile name portion for arg0	*/
+    case 'N':	args_pop(&args, 1);				break;	/* use the "(N)ext" arg (ignore first arg)	*/
+    case 'P':							break;	/* use the full (P)ath == no change		*/
+    }
+
+  /* handle special modifiers	*/
+  switch (suid_type)
+    {
+    default: break;	/* quiesce compiler	*/
+
+    case TYPE_SH:
+      args_prepend(&args, "/bin/sh", "-c", "--", "exec \"$@\"", NULL);
+      if (suid_cmd)
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "modifier 'sh:' does not support flag", OOPS_C, suid_cmd, NULL);
       break;
-    case 'C':	/* use Cmd from commandline as arg0	*/
-      args.args[0]	= cmd;
+    case TYPE_BASH:
+      args_prepend(&args, "/bin/bash", "-c", "--", "exec -a \"$0\" -- \"$@\"", NULL);
       break;
-    case 'F':	/* only use the File name portion for arg0	*/
-      args.args[0]	= file_name(args.args[0]);
-    case 'P':	/* use the full Path == no change	*/
-      break;
-    case 'N':	/* use the "Next" arg (ignore first arg)	*/
-      off	= 1;
-      break;
-    default:	/* just catch programming errors	*/
-      FATAL(suid_cmd);
     }
 
   /* fill target environment	*/
   populate_env(&env, allow_shellshock, ouid, ogid, cwd);
 
   /* invoke command	*/
-  fexecve(runfd, args.args+off, env.args);
+  fexecve(runfd, args.args, env.args);
   OOPS("execve() failed", args.args[0], NULL);
   return 127;	/* resemble shell	*/
 }
