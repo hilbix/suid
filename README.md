@@ -45,7 +45,15 @@ Why not `sudo`?
 - `suid` allows to call (and control) SUID-aware programs without need to set SUID flags in filesystem
 
 
-How to support a suid capable program?
+Call a script?
+
+- The ability to use a Shebang (`#!`) was lost in sudo v1.1.0 after using `fexecve` (POSIX.1-2008) in favor of `execve` (POSIX.1-2001).
+- So you need to use flag `W` now.  This has the disadvantage that it leaks the file descriptor of the script to the interpreter.
+- As an alternative you can use `:sh:/path/to/script:args..` instead of `:/path/to/script:args..`
+- This has the disadvantage, that it re-opens the script in `/bin/sh`, so it looses the bit better security of `fexecve` compared to `execve` (see `NOTES` section in `man fexecve`).
+- Note: `:sh` is the short form of `:/bin/sh:-c:--:exec "$0" "$@"`
+
+Call a suid capable program?
 
 - First: It must not have SUID bits set in filesystem.
 - Second: It should be owned by `root:root` and have mode `755` or even less.
