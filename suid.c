@@ -42,6 +42,10 @@ next(struct scan *scan)
   ptr	= strchr(scan->pos, ':');
   if (!ptr)
     OOPS(scan->file, OOPS_I, scan->l.linenr, "malformed line", NULL);
+  /*Assignment of int to char:
+    0       -> int
+    *ptr++  -> char
+   */
   *ptr++	= 0;
   scan->pos	= ptr;
   return ptr;
