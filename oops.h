@@ -19,7 +19,7 @@
 #define	OOPS_I		(char *)1	/* OOPS("int", OOPS_I, 1, NULL)	*/
 #define	OOPS_LLU	(char *)2	/* OOPS("long", OOPS_LLU, 2ll, NULL)	*/
 #define	OOPS_O		(char *)3	/* OOPS("oct", OOPS_O, 012, NULL)	*/
-#define	OOPS_C		(char *)4	/* OOPS("oct", OOPS_C, 'a', NULL)	*/
+#define	OOPS_C		(char *)4	/* OOPS("char", OOPS_C, 'a', NULL)	*/
 
 #define	FATAL(X)	do { if (X) OOPS(__FILE__, __FUNCTION__, "internal error", #X, NULL); } while (0)
 
