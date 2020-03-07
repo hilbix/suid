@@ -19,11 +19,16 @@
 #define	OOPS_I		(char *)1	/* OOPS("int", OOPS_I, 1, NULL)	*/
 #define	OOPS_LLU	(char *)2	/* OOPS("long", OOPS_LLU, 2ll, NULL)	*/
 #define	OOPS_O		(char *)3	/* OOPS("oct", OOPS_O, 012, NULL)	*/
+#define	OOPS_C		(char *)4	/* OOPS("char", OOPS_C, 'a', NULL)	*/
 
 #define	FATAL(X)	do { if (X) OOPS(__FILE__, __FUNCTION__, "internal error", #X, NULL); } while (0)
 
 #ifndef MAXLOOPS
 #define	MAXLOOPS	(2*BUFSIZ)
+#endif
+
+#ifndef	OOPS_FAIL
+#define	OOPS_FAIL	23
 #endif
 
 static inline void IGUR() {}	/* IGnore Unused Return: IGUR(fn(args))	*/
@@ -120,6 +125,11 @@ OOPS(const char *bug, ...)
           snprintf(buf, sizeof buf, "0%03o", va_arg(list, int));
           s	= buf;
         }
+      else if (s==OOPS_C)
+        {
+          snprintf(buf, sizeof buf, "%c", va_arg(list, int));	/* char is passed as int	*/
+          s	= buf;
+        }
       writes(2, ": ");
       writes(2, s);
     }
@@ -130,7 +140,7 @@ OOPS(const char *bug, ...)
       writes(2, strerror(e));
     }
   writes(2, "\n");
-  exit(23);	/* 23 Nicht ist so wie es scheint	*/
+  exit(OOPS_FAIL);
 }
 
 static void *
@@ -139,6 +149,19 @@ re_alloc(void *buf, size_t len)
   buf	= realloc(buf, len);
   if (!buf)
     OOPS("out of memory", OOPS_LLU, (unsigned long long)len, NULL);
+  return buf;
+}
+
+static char *
+stralloc(const char *s)
+{
+  size_t	len;
+  char		*buf;
+
+  len	= strlen(s)+1;
+  buf	= re_alloc(NULL, len);
+  strncpy(buf, s, len);
+  FATAL(buf[len-1]);
   return buf;
 }
 
