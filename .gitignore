@@ -1,4 +1,6 @@
 /*.d
 !/suid.conf.d/
 /*.o
+/COVERITY/
+/linuxid
 /suid
