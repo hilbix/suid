@@ -1,7 +1,7 @@
 # Makefile automatically generated, do not edit!
 # This output (only this Makefile) is Public Domain.
 #
-#@MD5TINOIGN@ Creation date: Sun Mar  8 01:02:12 CET 2020
+#@MD5TINOIGN@ Creation date: Wed Jan 16 16:08:11 CET 2019
 #
 # This file is based on following files:
 #@MD5TINOIGN@ 1: Makefile.tino
@@ -172,7 +172,7 @@ $(PROG1):	$(PROG1).o $(OBJS) $(LIBS)
 # compiler generated dependencies, remove if incorrect
 
 # included: suid.d
-$(PROG1).o:  suid.c linereader.h oops.h args.h suid_version.h osx.h
+$(PROG1).o:  suid.c linereader.h oops.h args.h memswap.h suid_version.h osx.h
 
 
 #@MD5TINOIGN@ rules from: Makefile.tino
@@ -183,6 +183,4 @@ install::
 	chmod 6555 $(INSTALLPATH)/bin/suid
 	if [ -f '/etc/$(CONF)' ]; then install --backup=t --compare -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
 	install --backup=t --compare -m644 -o0 -g0 -t/etc/suid.conf.d/ suid.conf.d.example/*.ex
-
-CVE-2016-2779:	CVE-2016-2779.c
 # end
