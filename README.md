@@ -45,6 +45,35 @@ Why not `sudo`?
 - `suid` allows to call (and control) SUID-aware programs without need to set SUID flags in filesystem
 
 
+Call a script?
+
+- The ability to use a Shebang (`#!`) was lost in `suid` v1.1.0 after using `fexecve` (POSIX.1-2008) in favor of `execve` (POSIX.1-2001).
+- So you need to use flag `W` now.  This has the disadvantage that it leaks the file descriptor of the script to the interpreter.
+- As an alternative you can use `:sh:/path/to/script:args..` instead of `:/path/to/script:args..`
+- This has the disadvantage, that it re-opens the script in `/bin/sh`, so it looses the bit better security of `fexecve` compared to `execve` (see `NOTES` section in `man fexecve`).
+- Note: `:sh` is the short form of `:/bin/sh:-c:--:exec "$0" "$@"`
+
+
+Call a suid capable program?
+
+- First: It must not have SUID bits set in filesystem.
+- Second: It should be owned by `root:root` and have mode `755` or even less.
+- Third: in `/etc/suid.conf` configure it as usual.
+- Prefix the `/path/to/bin` with `suid:`, that's all.
+- Bad example: `socklinger80::::::suid:/usr/local/bin/socklinger:outeripv4address\\:80:./miniweb.sh`
+  - `/usr/local/bin/socklinger` has no SUID flag set.
+  - [`socklinger`](https://github.com/hilbix/socklinger/) is a suid capable program
+  - So it will drop privileges after listening on the privileged port.
+  - Each incoming connection then will be served via `./miniweb.sh` in the current directory.
+  - UID is the UID of the caller
+- **Security-Notes:**
+  - If you leave away the `suid:` then `./miniweb.sh` would be served as root.
+  - This is a very bad example, as anybody can call this command as shown within his own context.
+- Good example: `socklinger80::nobody:nogroup::/:root:/usr/local/bin/socklinger:outeripv4address\\:80:/srv/miniweb.sh`
+  - `root:` is a convenience to preseed the unprivileged user to `nobody:nogroup` in that case.
+  - When `socklinger` drops privileges, it will become `nobody:nogroup` now.
+
+
 Why is `:` escaped to `\\:\:` and arguments should be followed by `\\:`?
 
 - Escaping is not particular human friendly, but it is easy to script and parse this way.
@@ -84,6 +113,8 @@ Is `suid` secure?
 - When sending pull requests, please stick to the "license".  (This is, abandon all Copyright from what you wrote.)
 
 - `suid` does not automagically secure your wrappers in `/etc/suid.conf`, so do not use insecure directories like `/tmp/` (dirs with write access only from `root` should be ok).
+
+- Secure by default.  If there is an insecure option added, this insecurity will not be switched on by default.  Never.
 
 
 Other conf?
