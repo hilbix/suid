@@ -1,6 +1,7 @@
 /*.d
 !/suid.conf.d/
 /*.o
+/*.swp
 /.gitcarry
 /COVERITY/
 /linuxid
