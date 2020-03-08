@@ -416,7 +416,7 @@ main(int argc, char **argv)
   char			*cmd, *pass, *user, *group, *minmax, *dir, *line, *cwd;
   int			uid, gid, ouid, ogid, euid, egid;
   struct passwd		*pw;
-  int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock;
+  int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock, allow_tiocsti;
   enum suid_type	suid_type;
   int			runfd;
   char			*orig;
@@ -485,7 +485,7 @@ main(int argc, char **argv)
    * early process optional flags, which are before min-max (flags must be sorted ABC):
    * DIS
    */
-  minmax = get_flags(&scan, minmax, "CDIFRS", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock);
+  minmax = get_flags(&scan, minmax, "CDIFRST", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock, &allow_tiocsti);
 
   /* get current settings	*/
   cwd	= getcwd(NULL, 0);
@@ -666,6 +666,10 @@ main(int argc, char **argv)
 
   /* fill target environment	*/
   populate_env(&env, allow_shellshock, ouid, ogid, cwd);
+
+  /* fix various security related things */
+  if (!allow_tiocsti)
+    setsid();	/* fails if we are already session leader	*/
 
   /* invoke command	*/
   fexecve(runfd, args.args, env.args);
