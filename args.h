@@ -4,6 +4,8 @@
  * see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
  */
 
+#include "memswap.h"
+
 struct args
   {
     int		n, max;
@@ -14,7 +16,7 @@ struct args
  * without allocating!
  * So it can be manipulated later on.
  */
-static void
+static struct args *
 args_add(struct args *a, char *s)
 {
   if (a->max <= a->n+1)
@@ -24,12 +26,13 @@ args_add(struct args *a, char *s)
     }
   a->args[a->n]		= s;
   a->args[++a->n]	= 0;
+  return a;
 }
 
 /* This adds a printf formatted string to args,
  * with allocating!
  */
-static void
+static struct args *
 args_addf(struct args *a, const char *s, ...)
 {
   char	*buf;
@@ -50,6 +53,36 @@ args_addf(struct args *a, const char *s, ...)
   k = strlen(buf);
   if (k+1<n)
     buf = re_alloc(buf, k+1);
-  args_add(a, buf);
+  return args_add(a, buf);
+}
+
+static struct args *
+args_prepend(struct args *a, ...)
+{
+  va_list	list;
+  char		*s;
+  int		n;
+
+  n	= a->n;
+
+  va_start(list, a);
+  while ((s = va_arg(list, char *))!=0)
+    args_add(a, s);
+  va_end(list);
+  memswap(a->args, n*sizeof *a->args, a->n*sizeof *a->args);
+  return a;
+}
+
+static struct args *
+args_pop(struct args *a, int n)
+{
+  if (n >= a->n)
+    {
+      a->n	= 0;
+      return a;
+    }
+  a->n	-= n;
+  memmove(a->args, &a->args[n], a->n*sizeof *a->args);
+  return a;
 }
 
