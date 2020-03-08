@@ -462,7 +462,7 @@ main(int argc, char **argv)
            "\tare prefixed with SUID_ (Shellshock save unless S)\n"
            "\n"
            "\tsuid usually returns the value of the bin, except:\n"
-           "\t126 if option fails (see: bash -c /dev/null)\n"
+           "\t126 if suid fails/usage  (see: bash -c /dev/null)\n"
            "\t127 if command not found (see: bash -c /notfound)\n"
            , NULL);
     }
