@@ -1,4 +1,4 @@
-> **Warning!  Versions before 1.0.0 had a major security flaw!** (major version incremented due to the flaw)
+> **Warning!**  See "Security" section at the end.
 
 [![suid dev Build Status](https://api.cirrus-ci.com/github/hilbix/suid.svg?branch=master)](https://cirrus-ci.com/github/hilbix/suid/master)
 
@@ -50,7 +50,7 @@ Why is `:` escaped to `\\:\:` and arguments should be followed by `\\:`?
 
 - Escaping is not particular human friendly, but it is easy to script and parse this way.
   - Simple commandlines which do not include a `:` can be written as-is with spaces changed to `:`
-  - If an argument contains no `\`, it is sufficient to add a `\` in front of the `:` each
+  - If an argument contains no `\`, it is sufficient to add a `\` in front of each literal `:` in a command
   - If an argument ends on `\`, you need to append `\\:` on the argument to allow the next separator.
   - If there are `\:` sequences in the argument, fully escape `:` with `\\:\:` to make it unambiguous.
 - If you want a single rule which always works:
@@ -135,4 +135,38 @@ see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
 
 Read: This is free as in free beer, free speech and free baby.
 Copyright on DNA is contradicting human rights.
+
+
+## Security
+
+`suid` has a strict "secure by default" policy.
+This section records the security related changes.
+
+If any major or minor security flaw is fixed:
+
+- the major (or minor respectively) version will be incremented
+- and `suid` will default to the most secure variant,
+- **even if this breaks existing setups**.
+- (Such a breaking change usually is a major security flaw.)
+
+Hence, if your setup is broken afterwards, you perhaps lived in danger.
+(If not does not mean you lived safe!)
+Now you can check and perhaps enable the option which opens the security hole again.
+But then you apparently know what you are doing.
+
+- Version 0.1.0 adds ShellShock prevention
+  - Environment variables with the ShellShock-Pattern are ignored
+  - This is a minor security flaw, as `bash` ususally is safe against ShellShock nowadays.
+  - Use option `S` to allow the ShellShock pattern
+
+- Version 1.0.0 closes a major security hole
+  - Previous versions did not correctly drop privileges.
+  - **Do not use versions before 1.0.0**
+
+- Version 2.0.0 protects against CVE-2016-2779
+  - Now `setsid()` is used to disable TIOCSTI attacks on `/dev/tty`
+  - **This might drastically change the behavior of programs!**
+  - For example it disables Job Control and Ctrl+C as well.
+  - Use option `T` to get rid of `setsid()` end re-enable TIOCSTI.
+  - Evil programs can then inject commands into your TTY.
 
