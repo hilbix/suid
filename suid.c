@@ -5,7 +5,7 @@
  */
 
 #define	_GNU_SOURCE
-#define	OOPS_FAIL	126
+#define	OOPS_FAIL	125
 
 #include "linereader.h"
 #include "args.h"
@@ -432,21 +432,15 @@ main(int argc, char **argv)
            "\tcommand:pw:user:grp:minmax:dir:/path/to/binary:args..\n"
            "\tpw:       comma separated list of options\n"
            "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
-           "\tminmax:   [D][S][minargs][-[maxargs]]\n"
+           "\tminmax:   [C][D][I][F][R][S][T][minargs][-[maxargs]]\n"
            "\targs..:   optional list of : separated args\n"
-           "\t          Escape ':' with '\\:' and '\\' with '\\\\:'\n"
+           "\t          Escape ':' with '\\:' and '\\' with '\\\\\\:'\n"
            "\t          'a:b'  must be written as 'a\\:b'\n"
-           "\t          'a\\b'  can  be written as 'a\\\\:b'\n"
-           "\t          'a\\:b' must be written as 'a\\\\:\\:b'\n"
-           "\n"
-           "\t!opt:option:value:!flags:dir:/path/to/checkscript:args..\n"
-           "\toption/value: optional, see list of options above\n"
-           "\t!flags:    ![D][S]\n"
-           "\tIf binary is given and fails, the whole process fails\n"
+           "\t          'a\\b'  can  be written as 'a\\\\\\:b'\n"
+           "\t          'a\\:b' must be written as 'a\\\\\\:\\:b'\n"
            "\n"
            "\tsuid usually returns the value of the binary, except:\n"
            "\t125 for suid failure (like this usage)\n"
-           "\t126 if option fails (see: bash -c /dev/null)\n"
            "\t127 if command not found (see: bash -c /notfound)\n"
            , NULL);
     }
