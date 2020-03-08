@@ -13,5 +13,7 @@
 # suid linuxid1b
 linuxid0a::0:0::/:suid:/tmp/linuxid
 linuxid0b::0:0::/:     /tmp/linuxid
+linuxid0c::0:0::/:root:/tmp/linuxid
 linuxid1a::1:1::/:suid:/tmp/linuxid
 linuxid1b::1:1::/:     /tmp/linuxid
+linuxid1c::1:1::/:root:/tmp/linuxid
