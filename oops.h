@@ -160,7 +160,11 @@ stralloc(const char *s)
 
   len	= strlen(s)+1;
   buf	= re_alloc(NULL, len);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+  /* GCC does not grok that `buf` must have length `len` now, so following is safe: */
   strncpy(buf, s, len);
+#pragma GCC diagnostic pop
   FATAL(buf[len-1]);
   return buf;
 }
