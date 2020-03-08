@@ -23,8 +23,7 @@ Afterwards you can run something as
 
 Return values:
 
-- 125 for suid failure (like usage)
-- 126 for option failure (compare: bash -c /dev/null)
+- 125 for general failure (like usage)
 - 127 for command not found (compare: bash -c /notfound)
 
 
