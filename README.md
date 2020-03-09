@@ -1,6 +1,6 @@
 > **Warning!**  See "Security" section at the end.
 
-[![suid Build Status](https://api.cirrus-ci.com/github/hilbix/suid.svg?branch=master)](https://cirrus-ci.com/github/hilbix/suid/master)
+[![suid dev Build Status](https://api.cirrus-ci.com/github/hilbix/suid.svg?branch=dev)](https://cirrus-ci.com/github/hilbix/suid/dev)
 
 
 # SUID
