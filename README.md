@@ -1,6 +1,6 @@
 > **Warning!**  See "Security" section at the end.
 
-[![suid dev Build Status](https://api.cirrus-ci.com/github/hilbix/suid.svg?branch=master)](https://cirrus-ci.com/github/hilbix/suid/master)
+[![suid Build Status](https://api.cirrus-ci.com/github/hilbix/suid.svg?branch=master)](https://cirrus-ci.com/github/hilbix/suid/master)
 
 
 # SUID
@@ -23,7 +23,7 @@ Afterwards you can run something as
 
 Return values:
 
-- 126 for suid failure (compare: bash -c /dev/null)
+- 126 for failure or usage (compare: bash -c /dev/null)
 - 127 for command not found (compare: bash -c /notfound)
 
 
