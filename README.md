@@ -101,7 +101,7 @@ Why is `:` escaped to `\\:\:` and arguments should be followed by `\\:`?
   - state0: state=state1, goto state1
   - state1: If c is `:`, enter state2 and return, else output c and return
   - state2: If c is `\`, enter state3 and return, else output separator, goto state0
-  - state2: If c is `\`, state=state0 and return, else output `:`, goto state0
+  - state3: If c is `\`, state=state0 and return, else output `:`, goto state0
 
 
 Is `suid` secure?
