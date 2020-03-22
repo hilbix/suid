@@ -193,7 +193,7 @@ But then you apparently know what you are doing.
   - Previous versions did not correctly drop privileges.
   - **Do not use versions before 1.0.0**
 
-- Version 2.0.0 protects against CVE-2016-2779
+- Version 2.0.0 protects against [CVE-2016-2779](https://security-tracker.debian.org/tracker/CVE-2016-2779)
   - Now `setsid()` is used to disable TIOCSTI attacks on `/dev/tty`
   - **This might drastically change the behavior of programs!**
   - For example it disables Job Control and Ctrl+C as well.
