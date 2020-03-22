@@ -5,7 +5,7 @@
 
 # SUID
 
-Somewhat an inverse to `sudo`.
+Somewhat an inverse to `sudo` but with security first.
 
 
 ## Usage
