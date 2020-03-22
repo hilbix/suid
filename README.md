@@ -29,7 +29,7 @@ Return values:
 
 ## Configuration and environment
 
-See `suid.conf` sample file.
+See [`/etc/suid.conf`](suid.conf) sample file and [`/etc/suid.conf.d/`](suid.conf.d.example/) sample directory.
 
 
 ## FAQ
@@ -60,7 +60,7 @@ Call a suid capable program?
 - Second: It should be owned by `root:root` and have mode `755` or even less.
 - Third: in `/etc/suid.conf` configure it as usual.
 - Prefix the `/path/to/bin` with `suid:`, that's all.
-- Bad example: `socklinger80::::::suid:/usr/local/bin/socklinger:outeripv4address\\:80:./miniweb.sh`
+- Bad example: `socklinger80::::::suid:/usr/local/bin/socklinger:outeripv4address\:80:./miniweb.sh`
   - `/usr/local/bin/socklinger` has no SUID flag set.
   - [`socklinger`](https://github.com/hilbix/socklinger/) is a suid capable program
   - So it will drop privileges after listening on the privileged port.
@@ -68,10 +68,15 @@ Call a suid capable program?
   - UID is the UID of the caller
 - **Security-Notes:**
   - If you leave away the `suid:` then `./miniweb.sh` would be served as root.
-  - This is a very bad example, as anybody can call this command as shown within his own context.
-- Good example: `socklinger80::nobody:nogroup::/:root:/usr/local/bin/socklinger:outeripv4address\\:80:/srv/miniweb.sh`
-  - `root:` is a convenience to preseed the unprivileged user to `nobody:nogroup` in that case.
-  - When `socklinger` drops privileges, it will become `nobody:nogroup` now.
+  - Above is a very bad example, as anybody can call this command as shown within his own context and occupy port 80.  
+  - This is probably someting you perhaps want on generic dev-machines, but definitively not in production, hence bad.
+- Good example: `socklinger80::nobody:nogroup::/:root:/usr/local/bin/socklinger:outeripv4address\:80:/srv/miniweb.sh`
+  - `root:` is a convenience to call the program as root, but preseed the unprivileged user with the given `nobody:nogroup`.
+  - When `socklinger` drops privileges, it will become `nobody:nogroup`
+  - Anybody can start the command, but it always will do the same.
+  - This also works on dev-machines if the Devs can control what `/srv/miniweb.sh` does.
+  - Hence this is good practice, as this resembles what production will look like as well.
+  - For this change `nobody:nogroup` to whatever you expect in production.
 
 
 Why is `:` escaped to `\\:\:` and arguments should be followed by `\\:`?
