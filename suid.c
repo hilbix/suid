@@ -336,12 +336,12 @@ checkfile(int uid, int gid, struct args *args, int insecure, int wrap)
 
   DP("() dir '%s'", dir);
   /* be careful what to access	*/
-  d	= openat(AT_FDCWD, dir, O_RDONLY|O_DIRECTORY|O_CLOEXEC|(wrap ? 0 : O_NOFOLLOW));
+  d	= openat(AT_FDCWD, dir, O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
   if (d<0)
     OOPS(dir, "cannot access directory", NULL);
 
   DP("() file '%s'", name);
-  f	= openat(d, name, O_RDONLY|O_NOFOLLOW|O_CLOEXEC);
+  f	= openat(d, name, O_RDONLY|O_NOFOLLOW|(wrap ? 0 : O_CLOEXEC));
   if (f<0)
     OOPS(orig, "cannot access file", name, NULL);
 
@@ -713,7 +713,8 @@ main(int argc, char **argv)
 
   /* invoke command	*/
   fexecve(runfd, args.args, env.args);
-  OOPS("execve() failed", args.args[0], NULL);
+  OOPS(errno==ENOENT ? "fexecve() failed (missing W flag?)" : "fexecve() failed",
+       args.args[0], NULL);
   return 127;	/* resemble shell	*/
 }
 
