@@ -447,7 +447,7 @@ main(int argc, char **argv)
            "\tcommand:pw:user:grp:minmax:dir:/path/to/bin:args..\n"
            "\tpw:       currently must be empty\n"
            "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
-           "\tminmax:   [CDIFNRSTW][minargs][-[maxargs]]\n"
+           "\tminmax:   [CDFINRSTW][minargs][-[maxargs]]\n"
            "\t          Cmd/Filename/Next/Realpath is arg0, other flags:\n"
            "\t          Debug/Insecure/ShellShock/TIOCSTI/Wrap\n"
            "\targs..:   optional list of ':' separated args\n"
@@ -507,7 +507,7 @@ main(int argc, char **argv)
    * TIOCSTI
    * Wrap
    */
-  minmax = get_flags(&scan, minmax, "CDIFNRSTW", &suid_cmd, &debug, &insecure, &suid_cmd, &suid_cmd, &suid_cmd, &allow_shellshock, &allow_tiocsti, &wrap);
+  minmax = get_flags(&scan, minmax, "CDFINRSTW", &suid_cmd, &debug, &suid_cmd, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock, &allow_tiocsti, &wrap);
 
   /* get current settings	*/
   cwd	= getcwd(NULL, 0);
