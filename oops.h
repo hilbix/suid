@@ -94,19 +94,15 @@ closex(int fd)
 static int
 writes(int fd, const char *s)
 {
-  return writex(fd, s, strlen(s));
+  return s ? writex(fd, s, strlen(s)) : 0;
 }
 
 static void
-OOPS(const char *bug, ...)
+ERRORv(int e, const char *s, va_list list)
 {
-  va_list	list;
-  int 		e = errno;
-  const char	*s;
+  const char *sep;
 
-  writes(2, bug);
-  va_start(list, bug);
-  while ((s=va_arg(list, const char *))!=0)
+  for (sep=0; s; s=va_arg(list, const char *))
     {
       char	buf[22];
 
@@ -130,16 +126,49 @@ OOPS(const char *bug, ...)
           snprintf(buf, sizeof buf, "%c", va_arg(list, int));	/* char is passed as int	*/
           s	= buf;
         }
-      writes(2, ": ");
+      writes(2, sep);
+      sep = ": ";
       writes(2, s);
     }
-  va_end(list);
+
   if (e)
     {
-      writes(2, ": ");
+      writes(2, sep);
       writes(2, strerror(e));
     }
   writes(2, "\n");
+}
+
+static void
+ERROR(const char *s, ...)
+{
+  int 		e = errno;
+  va_list	list;
+
+  va_start(list, s);
+  ERRORv(e, s, list);
+  va_end(list);
+}
+
+static void
+STDERR(const char *s, ...)
+{
+  va_list	list;
+
+  va_start(list, s);
+  ERRORv(0, s, list);
+  va_end(list);
+}
+
+static void
+OOPS(const char *bug, ...)
+{
+  int 		e = errno;
+  va_list	list;
+
+  va_start(list, bug);
+  ERRORv(e, bug, list);
+  va_end(list);
   exit(OOPS_FAIL);
 }
 

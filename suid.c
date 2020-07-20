@@ -151,20 +151,25 @@ populate_env(struct args *env, int allow_shellshock, int uid, int gid, const cha
 
 /* /etc/suid.conf and /etc/suid.conf.d/ *******************************/
 
+/* return 0: ownership ok
+ * return 1: not ok
+ */
 static int
 checkown(const char *path)
 {
   struct stat st;
 
   if (stat(path, &st))
-    return 1;
-  if (st.st_uid)
-    OOPS(path, "wrong ownership", OOPS_I, (int)st.st_uid, NULL);
-  if (st.st_gid)
-    OOPS(path, "wrong group", OOPS_I, (int)st.st_gid, NULL);
-  if (st.st_mode & 022)
-    OOPS(path, "wrong mode", OOPS_O, (unsigned)st.st_mode, NULL);
-  return 0;
+    ERROR(path, "cannot stat", NULL);
+  else if (st.st_uid)
+    STDERR(path, "wrong ownership", OOPS_I, (int)st.st_uid, NULL);
+  else if (st.st_gid)
+    STDERR(path, "wrong group", OOPS_I, (int)st.st_gid, NULL);
+  else if (st.st_mode & 022)
+    STDERR(path, "wrong mode", OOPS_O, (unsigned)st.st_mode, NULL);
+  else
+    return 0;
+  return 1;
 }
 
 static char *
@@ -216,7 +221,7 @@ find_cmd(struct scan *scan)
     return 0;	/* found	*/
 
   if (checkown(CONFDIR))
-    return 1;	/* missing /etc/suid.conf.d/	*/
+    return 1;	/* missing or wrong /etc/suid.conf.d/	*/
 
   /* check /etc/suid.conf.d/ *.conf	*/
   n	= scandir(CONFDIR, &ent, conf_filter, alphasort);
