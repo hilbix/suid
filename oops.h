@@ -214,12 +214,12 @@ getint(const char *s, int *val)
 }
 
 static int
-fetchint(char * const *s, int def)
+fetchint(char **s, int def)
 {
   long long	l;
   char		*end;
 
   l = strtoll(*s, &end, 10);
-  return end && end != *s ? l : def;
+  return end && end != *s ? (*s=end), l : def;
 }
 
