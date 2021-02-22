@@ -441,6 +441,7 @@ main(int argc, char **argv)
   enum suid_type	suid_type;
   int			runfd;
   char			*orig;
+  char			*exe;
 
   if (argc<2)
     {
@@ -650,18 +651,7 @@ main(int argc, char **argv)
   for (i=1; ++i<argc; )
     args_add(&args, argv[i]);
 
-  /* show debug info (flag D)	*/
-  if (debug)
-    {
-      fprintf(stderr, "cmd:  %s\n", cmd);
-      fprintf(stderr, "uid:  %d\n", uid);
-      fprintf(stderr, "gid:  %d\n", gid);
-      fprintf(stderr, "args: %d - %d\n", minarg, maxarg);
-      fprintf(stderr, "dir:  %s\n", dir);
-      for (i=0; args.args[i]; i++)
-        printf("%4d: %s\n", i, args.args[i]);
-    }
-  else if (cmd[0]=='!')	/* Disallow direct call to Options, except when debugging */
+  if (!debug && cmd[0]=='!')	/* Disallow direct call to Options, except when debugging */
     OOPS(argv[0], "command must not start with '!'", NULL);
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
@@ -680,6 +670,7 @@ main(int argc, char **argv)
    */
   orig	= args.args[0];
   runfd	= checkfile(uid, gid, &args, insecure, wrap);
+  exe	= args.args[0];
 
   /* args.args[0] was populated with the full path
    * of the file which is referenced by runfd
@@ -711,6 +702,40 @@ main(int argc, char **argv)
 
   /* fill target environment	*/
   populate_env(&env, allow_shellshock, ouid, ogid, cwd);
+
+  /* show debug info (flag D)	*/
+  if (debug)
+    {
+      int cnt;
+
+      fprintf(stderr, "cmd:  %s\n", cmd);
+      fprintf(stderr, "ugid: %d / %d\n", uid, gid);
+      fprintf(stderr, "flag: %c%c%c%c%c%c\n"
+        , suid_cmd ? suid_cmd : ' '
+        , debug ? debug : ' '
+        , insecure ? insecure : ' '
+        , allow_shellshock ? allow_shellshock : ' '
+        , allow_tiocsti ? allow_tiocsti : ' '
+        , wrap ? wrap : ' '
+        );
+      fprintf(stderr, "args: %d .. %d\n", minarg, maxarg);
+      fprintf(stderr, "dir:  %s\n", dir);
+      fprintf(stderr, "orig: %s\n", orig);
+      fprintf(stderr, "eff.: %d / %d\n", (int)geteuid(), (int)getegid());
+      fprintf(stderr, "real: %d / %d\n", (int)getuid(),  (int)getgid());
+      fprintf(stderr, "exec: %d\n", runfd);
+      fprintf(stderr, "bin:  %s\n", exe);
+      for (i=0; args.args[i]; i++)
+        printf("%4d: %s\n", i, args.args[i]);
+      cnt=0;
+      for (i=0; env.args[i]; i++)
+        if (strncmp("SUID_", env.args[i], 5))
+          printf("env:  %s\n", env.args[i]);
+        else
+          cnt++;
+      if (cnt)
+        printf("env: (%d variables with prefix SUID_ not shown)\n", cnt);
+    }
 
   /* fix various security related things */
   if (!allow_tiocsti)
