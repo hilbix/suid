@@ -212,3 +212,8 @@ But then you apparently know what you are doing.
   - Use option `T` to get rid of `setsid()` end re-enable TIOCSTI.
   - Evil programs can then inject commands into your TTY.
 
+- Version 2.4.0 changes debug output (flag 'D') and corrects some other infos
+  - Remember that flags must be sorted alphabetically
+  - It also includes a mitigation for [CVE-2021-3156](https://security-tracker.debian.org/tracker/CVE-2021-3156) in
+    [`suid.conf.d.example/sudo-cve-2021-3156.conf.ex`](suid.conf.d.example/sudo-cve-2021-3156.conf.ex)
+
