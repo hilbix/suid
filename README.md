@@ -68,7 +68,7 @@ Call a suid capable program?
   - UID is the UID of the caller
 - **Security-Notes:**
   - If you leave away the `suid:` then `./miniweb.sh` would be served as root.
-  - Above is a very bad example, as anybody can call this command as shown within his own context and occupy port 80.  
+  - Above is a very bad example, as anybody can call this command as shown within his own context and occupy port 80.
   - This is probably someting you perhaps want on generic dev-machines, but definitively not in production, hence bad.
 - Good example: `socklinger80::nobody:nogroup::/:root:/usr/local/bin/socklinger:outeripv4address\:80:/srv/miniweb.sh`
   - `root:` is a convenience to call the program as root, but preseed the unprivileged user with the given `nobody:nogroup`.
@@ -82,7 +82,7 @@ Call a suid capable program?
 Why is `:` escaped to `\\:\:` and arguments should be followed by `\\:`?
 
 - Escaping is not particular human friendly, but it is easy to script and parse this way.
-  - Simple commandlines which do not include a `:` can be written as-is with spaces changed to `:`
+  - Simple commandlines which do not include a `:` can be written as-is with separating spaces changed to `:`
   - If an argument contains no `\`, it is sufficient to add a `\` in front of each literal `:` in a command
   - If an argument ends on `\`, you need to append `\\:` on the argument to allow the next separator.
   - If there are `\:` sequences in the argument, fully escape `:` with `\\:\:` to make it unambiguous.
@@ -103,10 +103,12 @@ Why is `:` escaped to `\\:\:` and arguments should be followed by `\\:`?
   - If it is `\`, then remove the caracter, too, we are ready (the `:` is swallowed).
   - Else we saw `\:`, so just output `:` (note that we already removed the `\`).
 - Low-level parsing backwards allows a simple state machine:
-  - state0: state=state1, goto state1
-  - state1: If c is `:`, enter state2 and return, else output c and return
-  - state2: If c is `\`, enter state3 and return, else output separator, goto state0
-  - state3: If c is `\`, state=state0 and return, else output `:`, goto state0
+  - state0: if c is EOF then state=state4 and return, else state=state0 and goto state1
+  - state1: If c is `:` then state=state2 and return, else output c and return
+  - state2: If c is `\` then state=state3 and return, else output separator and goto state0
+  - state3: If c is `\` then state=state0 and return, else output `:` and goto state0
+  - state4: final state
+  - This assumes EOF is passed in as the "one before the first character" character
 
 
 Is `suid` secure?
@@ -119,7 +121,11 @@ Is `suid` secure?
 
 - `suid` does not automagically secure your wrappers in `/etc/suid.conf`, so do not use insecure directories like `/tmp/` (dirs with write access only from `root` should be ok).
 
-- Secure by default.  If there is an insecure option added, this insecurity will not be switched on by default.  Never.
+- It is designed with following design principles in mind:
+  - Do just one single thing and do this right.
+  - Perfection is reached when you cannot leave away anything anymore.
+  - Secure by default.
+  - If there is an insecure option added, this insecurity will not be switched on by default.  Never.
 
 
 Other conf?
@@ -151,7 +157,7 @@ Other conf?
 
 Debianized version?
 
-- I'm working on it.
+- I'm working on it, extremely slowly.
 
 - However I probably do not have time to become a Debian maintainer myself.
 
@@ -160,7 +166,7 @@ License?
 
 - See License below.
 
-- Yeah, this is not really a license, but it defines the rules.
+- Yes, this is not really a license, but it defines the rules.
 
 
 ## License
@@ -168,8 +174,9 @@ License?
 This Works is placed under the terms of the Copyright Less License,
 see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
 
-Read: This is free as in free beer, free speech and free baby.
-Copyright on DNA is contradicting human rights.
+> Read:  
+> This is free as in free beer, free speech and free baby.  
+> Copyright on DNA is contradicting human rights.
 
 
 ## Security
