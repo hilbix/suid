@@ -1,2 +1,2 @@
-printenv::::D-:/:/usr/bin/printenv:--
-printenv0::::D-:/:/usr/bin/printenv:-0:--
+printenv::*:*:D-:/:/usr/bin/printenv:--
+printenv0::*:*:D-:/:/usr/bin/printenv:-0:--
