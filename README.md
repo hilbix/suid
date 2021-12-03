@@ -217,3 +217,10 @@ But then you apparently know what you are doing.
   - It also includes a mitigation for [CVE-2021-3156](https://security-tracker.debian.org/tracker/CVE-2021-3156) in
     [`suid.conf.d.example/sudo-cve-2021-3156.conf.ex`](suid.conf.d.example/sudo-cve-2021-3156.conf.ex)
 
+- Version 3.0.0 closes a MAJOR security flaw for `:root:` modifier, and repairs `:sh:` and `:bash:`
+  - **If you use any of these 3, please use this version!**
+  - The MAJOR security flaw only affects you if you happen to run some command with the `:root:` modifier and this command was writeable by the targeted user as well.  This error can still be made easily by executing a shell as command which then runs a script of a foreign user.  Hopefully the now working `:bash:` and `:sh:` modifiers can help to prevent that common mistake better (as you do not need to run a shell, just use the right modifier to execute the script).  Note that `suid` cannot protect magically against calling the wrong script from the configured command.  (Today.  In future perhaps namespaces can protect even against that.)
+  - So the security flaw was MAJOR from `suid`'s point of view, but probably not MAJOR from your view.  However the changes are MAJOR too, affecting all 3 modifiers (but nothing else).  When upgrading to this version, please thorougly test all commands which use `:root:`, `:sh:` or `:bash:`.
+  - Note that there is no flag to switch back to the previous handling of those modifiers.  `:bash:` and `:sh:` were ridiculously broken, while the old `:root:` behavior can be gained by wrapping the command into `/bin/bash` or similar (as the shell is owned by root, `suid` cannot detect any permission problem on what the shell does).
+  - Note that the use of `:sh:` and `:bash:` improve security, because `suid` is able to test the permissions of both, the script and the shell this way.  So instead you wrapping it into the shell, just use the script directly and use the modifier.
+
