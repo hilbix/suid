@@ -11,8 +11,9 @@ memrev(void *base, size_t len)
 {
   char	*a, *b, c;
 
-  for (a = base, b = a+len; a>b; a++, b--)
-    c = *a, *a = *b, *b = c;
+  if (len)
+    for (a = base, b = a+len-1; a<b; a++, b--)
+      c = *a, *a = *b, *b = c;
 }
 
 /* Swap memory area within itself.
@@ -38,9 +39,9 @@ memswap(void *base, size_t off, size_t len)
    * For now, touch each element twice:
    */
 
-  memrev(base, len);			/* abcdEFG -> GFEdcba	*/
-  memrev(base, off);			/* GFEdcba -> EFGdcba	*/
-  memrev(((char *)base)+off, len-off);	/* EFGdcba -> EFGabcd	*/
+  memrev(base, off);			/* abcdEFG -> dcbaEFG	*/
+  memrev(((char *)base)+off, len-off);	/* dcbaEFG -> dcbaGFE	*/
+  memrev(base, len);			/* dcbaGFE -> EFGabcd	*/
   return base;
 }
 
