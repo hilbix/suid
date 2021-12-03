@@ -11,7 +11,7 @@ memrev(void *base, size_t len)
 {
   char	*a, *b, c;
 
-  for (a = base, b = a+len; a>b; a++, b--)
+  for (a = base, b = a+len; a<b; a++, b--)
     c = *a, *a = *b, *b = c;
 }
 
