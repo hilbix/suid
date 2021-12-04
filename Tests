@@ -1,0 +1,54 @@
+
+# make sure we are dealing with the right install
+need	/usr/local/bin/suid
+need	/linuxid
+need	/linuxid0
+need	/linuxid1
+run	cp ../suid suid
+run	strip -s suid
+run	cmp suid /usr/local/bin/suid
+RUN	0
+run	rm -f suid
+run	cmp ../suid.conf.d.example/linuxid.conf.ex /etc/suid.conf.d/linuxid.conf
+RUN	0
+
+# Now run tests from suid.conf.d.example/linuxid.conf.ex
+run	/linuxid
+RUN	0	Uid:@t1000@t1000@t1000@t1000@_Gid:@t1000@t1000@t1000@t1000@_seteuid(1000) worked
+
+run	/linuxid0
+RUN	0	Uid:@t1000@t0@t0@t0@_Gid:@t1000@t0@t0@t0@_seteuid(0) worked@_seteuid(1) worked@_seteuid(1000) worked
+
+run	/usr/local/bin/suid linuxid0a
+RUN	0	cmd: @+linuxid0a@_ugid: 0 / 0@_flag: @+D @+ @+@_args: 0 .. 0@_dir: @+/@_orig: /linuxid@_eff.: 0 / 0@_real: 1000 / 1000@_exec: 5@_bin: @+/linuxid@_Uid:@t1000@t0@t0@t0@_Gid:@t1000@t0@t0@t0@_seteuid(0) worked@_seteuid(1) worked@_seteuid(1000) worked
+
+run	/usr/local/bin/suid linuxid0b
+RUN	0	cmd: @+linuxid0b@_ugid: 0 / 0@_flag: @+D @+ @+@_args: 0 .. 0@_dir: @+/@_orig: /linuxid@_eff.: 0 / 0@_real: 0 / 0@_exec: 5@_bin: @+/linuxid@_Uid:@t0@t0@t0@t0@_Gid:@t0@t0@t0@t0@_seteuid(0) worked@_seteuid(1) worked@_seteuid(0) worked@_seteuid(1) worked
+
+run	/usr/local/bin/suid linuxid0c
+RUN	0	cmd: @+linuxid0c@_ugid: 1 / 1@_flag: @+D @+ @+@_args: 0 .. 0@_dir: @+/@_orig: /linuxid@_eff.: 0 / 0@_real: 1 / 1@_exec: 5@_bin: @+/linuxid@_Uid:@t1@t0@t0@t0@_Gid:@t1@t0@t0@t0@_seteuid(0) worked@_seteuid(1) worked@_seteuid(1) worked@_seteuid(1) worked
+
+run	/usr/local/bin/suid linuxid0d
+RUN	0	cmd: @+linuxid0d@_ugid: 1 / 1@_flag: @+D @+ @+@_args: 0 .. 0@_dir: @+/@_orig: /linuxid0@_eff.: 0 / 0@_real: 1 / 1@_exec: 5@_bin: @+/linuxid0@_Uid:@t1@t0@t0@t0@_Gid:@t1@t0@t0@t0@_seteuid(0) worked@_seteuid(1) worked@_seteuid(1) worked@_seteuid(1) worked
+
+run	/usr/local/bin/suid linuxid0e
+RUN	126	/linuxid1: wrong user id: 1: expected: 0
+
+run	/linuxid1
+RUN	0	Uid:@t1000@t1@t1@t1@_Gid:@t1000@t1@t1@t1@_seteuid(1) worked@_seteuid(1000) worked@_seteuid(1) worked
+
+run	/usr/local/bin/suid linuxid1a
+RUN	0	cmd: @+linuxid1a@_ugid: 1 / 1@_flag: @+D @+ @+@_args: 0 .. 0@_dir: @+/@_orig: /linuxid@_eff.: 1 / 1@_real: 1000 / 1000@_exec: 5@_bin: @+/linuxid@_Uid:@t1000@t1@t1@t1@_Gid:@t1000@t1@t1@t1@_seteuid(1) worked@_seteuid(1000) worked@_seteuid(1) worked
+
+run	/usr/local/bin/suid linuxid1b
+RUN	0	cmd: @+linuxid1b@_ugid: 1 / 1@_flag: @+D @+ @+@_args: 0 .. 0@_dir: @+/@_orig: /linuxid@_eff.: 1 / 1@_real: 1 / 1@_exec: 5@_bin: @+/linuxid@_Uid:@t1@t1@t1@t1@_Gid:@t1@t1@t1@t1@_seteuid(1) worked@_seteuid(1) worked@_seteuid(1) worked
+
+run	/usr/local/bin/suid linuxid1c
+RUN	0	cmd: @+linuxid1c@_ugid: 1 / 1@_flag: @+D @+ @+@_args: 0 .. 0@_dir: @+/@_orig: /linuxid@_eff.: 0 / 0@_real: 1 / 1@_exec: 5@_bin: @+/linuxid@_Uid:@t1@t0@t0@t0@_Gid:@t1@t0@t0@t0@_seteuid(0) worked@_seteuid(1) worked@_seteuid(1) worked@_seteuid(1) worked
+
+run	/usr/local/bin/suid linuxid1d
+RUN	0	cmd: @+linuxid1d@_ugid: 1 / 1@_flag: @+D @+ @+@_args: 0 .. 0@_dir: @+/@_orig: /linuxid0@_eff.: 0 / 0@_real: 1 / 1@_exec: 5@_bin: @+/linuxid0@_Uid:@t1@t0@t0@t0@_Gid:@t1@t0@t0@t0@_seteuid(0) worked@_seteuid(1) worked@_seteuid(1) worked@_seteuid(1) worked
+
+run	/usr/local/bin/suid linuxid1e
+RUN	126	/linuxid1: wrong user id: 1: expected: 0
+
