@@ -7,8 +7,8 @@ make_task:
   install_script: make install
   preptest0_script: cp -i suid.conf.d.example/linuxid.conf.ex /etc/suid.conf.d/linuxid.conf
   preptest1_script: make linuxid
-  preptest2_script: for a in '' 0 1; do cp linuxid /linuxid$a && chown 0:0 /linuxid$a && sudo chmod 755 /linuxid$a || exit 1; done
-  preptest3_script: sudo chown 1:1 /linuxid1 && sudo chmod +s /linuxid[01]
+  preptest2_script: for a in '' 0 1; do cp linuxid /linuxid$a && chown 0:0 /linuxid$a && chmod 755 /linuxid$a || exit 1; done
+  preptest3_script: chown 1:1 /linuxid1 && chmod +s /linuxid[01]
   preptest4_script: git clone https://github.com/hilbix/tinolib.git ../tinolib
   test_script: make test
 
