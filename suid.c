@@ -337,7 +337,19 @@ checkfile(int uid, int gid, struct args *args, int insecure, int wrap)
   if ((dir=realpath(orig, NULL))==0 || (name=file_name(dir))==dir || *dir!='/')
     OOPS(orig, "path resolution failed", dir, NULL);
   args->args[0]	= stralloc(dir);	/* return, what needs to be executed	*/
-  name[-1]	= 0;
+  /* We have a problem with something like "/init.sh" here.
+   * In that case name == dir+1 and we MUST NOT nuke the first '/'.
+   * We cannot adjust dir (due to free(dir) at the end),
+   * hence we need some munchhausen method to escape that problem.
+   * Life ain't easy ..
+   */
+  if (name == dir+1)
+    {
+      *name	= 0;
+      name = args->args[0]+1;
+    }
+  else
+    name[-1]	= 0;
 
   DP("() dir '%s'", dir);
   /* be careful what to access	*/
@@ -434,6 +446,7 @@ main(int argc, char **argv)
   struct args		args = { 0 }, env = { 0 };
   char			*cmd, *pass, *user, *group, *minmax, *dir, *line, *cwd;
   int			uid, gid, ouid, ogid, euid, egid;
+  int			cuid, cgid;	/* which permission set to check for call	*/
   struct passwd		*pw;
   int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock;
   int			allow_tiocsti;
@@ -608,6 +621,8 @@ main(int argc, char **argv)
   /* Apply the new uid/gid for normal commands.
    * On "suid" commands, apply it such, as if command was invoked with suid flags.
    */
+  cuid	= uid;
+  cgid	= gid;
   switch (suid_type)
     {
     default:	FATAL(suid_type);
@@ -619,6 +634,11 @@ main(int argc, char **argv)
         OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot move to group", OOPS_I, gid, NULL);
       if (setreuid(uid, euid))
         OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot move to user", OOPS_I, uid, NULL);
+      /* check compatibility of called program with our effective uid
+       * (which usually is 0 AKA root)
+       */
+      cuid	= euid;
+      cgid	= egid;
       break;
 
     case TYPE_SUID:
@@ -669,7 +689,7 @@ main(int argc, char **argv)
    * (We can stop searching if we hit a 755 root:root directory.)
    */
   orig	= args.args[0];
-  runfd	= checkfile(uid, gid, &args, insecure, wrap);
+  runfd	= checkfile(cuid, cgid, &args, insecure, wrap);
   exe	= args.args[0];
 
   /* args.args[0] was populated with the full path
@@ -694,10 +714,27 @@ main(int argc, char **argv)
       args_prepend(&args, "/bin/sh", "-c", "--", "exec \"$@\"", NULL);
       if (suid_cmd)
         OOPS(scan.file, OOPS_I, scan.l.linenr, "modifier 'sh:' does not support flag", OOPS_C, suid_cmd, NULL);
+      runfd = -1;
       break;
     case TYPE_BASH:
       args_prepend(&args, "/bin/bash", "-c", "--", "exec -a \"$0\" -- \"$@\"", NULL);
+      runfd = -1;
       break;
+    }
+  if (runfd<0)
+    {
+      /* We need to check again compatibility for the changed command.
+       * Also we do not support "insecure" bash/sh, of course,
+       * and wrapping is supported (for now?  Perhaps we can exec the fd ..).
+       */
+      if (wrap)
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "modifier (sh/bash) does not support flag", OOPS_C, wrap, NULL);
+      /* Following leaks memory, as args->args[0] was allocated
+       * by the last call to checkfile().
+       * But we ignore that, because we exec() below.
+       * Note that we cannot free() in checkfile() as the initial args->args[0] wasn't allocated.
+       */
+      runfd	= checkfile(cuid, cgid, &args, 0, 0);
     }
 
   /* fill target environment	*/
