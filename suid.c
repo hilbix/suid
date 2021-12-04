@@ -314,6 +314,9 @@ modifier(struct args *args, enum suid_type type)
 
 /* Helpers ************************************************************/
 
+/* find the last path component and return it.
+ * If there is no last component, return all.
+ */
 static char *
 file_name(char *s)
 {
@@ -323,6 +326,13 @@ file_name(char *s)
   return tmp ? tmp+1 : s;
 }
 
+/* As we are superuser here, check that args->args[0] is compatible with uid/gid.
+ * This means, that all of the path belongs to either root or the given uid/gid
+ * and is not globally writable.  (I hope this is enough, if not, please open bug!)
+ * Group writable is ok, but please be careful with something like this, as always!
+ *
+ * Note that we check the realpath() with O_NOFOLLOW, hence softlink attacks are impossible.
+ */
 static int
 checkfile(int uid, int gid, struct args *args, int insecure, int wrap)
 {
@@ -395,9 +405,11 @@ checkfile(int uid, int gid, struct args *args, int insecure, int wrap)
       if ((st.st_mode & S_IWGRP) && st.st_gid && st.st_gid!=gid)
         OOPS(dir, "wrong group id", OOPS_I, (int)st.st_gid, "expected", OOPS_I, gid, NULL);
 
+      /* this cannot happen in the first iteration, as name != dir (see entry of function) */
       if (name==dir)
         break;
 
+      /* Get the parent directory for path checking below	*/
       p	= openat(d, "..", O_RDONLY|O_DIRECTORY|O_CLOEXEC|O_NOFOLLOW);
       if (p<0)
         OOPS(dir, "cannot access parent directory", NULL);
@@ -408,6 +420,12 @@ checkfile(int uid, int gid, struct args *args, int insecure, int wrap)
       close(p);
 
       name	= file_name(dir);
+      /* Chop off the last component of dir which we have successfully processed above.
+       * At this point name points to the filename component with the '/' in front.
+       * We always have a '/' in front as *dir == '/' (see entry of function).
+       * At the last iteration, dir is "/something" above, hence name == dir+1 here.
+       * In that case we leave alone the fist '/' in *dir, so dir becomes "/" (root).
+       */
       name--;
       name[name==dir ? 1 : 0]	= 0;
 
@@ -419,6 +437,7 @@ checkfile(int uid, int gid, struct args *args, int insecure, int wrap)
       if (fstat(d, &st))
         OOPS(dir, "cannot stat directory", NULL);
 
+      /* check that .. (from above) and the newly calculated absolute path are identical */
       if (st.st_dev  != st2.st_dev  ||
           st.st_ino  != st2.st_ino  ||
           st.st_mode != st2.st_mode ||
@@ -450,7 +469,7 @@ main(int argc, char **argv)
   struct passwd		*pw;
   int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock;
   int			allow_tiocsti;
-  int			wrap;
+  int			wrap;		/* Flag W	*/
   enum suid_type	suid_type;
   int			runfd;
   char			*orig;
@@ -687,6 +706,10 @@ main(int argc, char **argv)
    *
    * Directories, which contain the command, must fulfill the same.
    * (We can stop searching if we hit a 755 root:root directory.)
+   *
+   * In the normal case the command is run with real, effective and saved uids set to the config uid (via setuid())
+   * In the 'suid' case the real/saved uid stays as that of the user calling, and the effective uid is set to the config uid (via seteuid()).
+   * But in the 'root' case the effective uid is not changed (usually is root), hence checkfile() must make sure the user cannot impersonate root!
    */
   orig	= args.args[0];
   runfd	= checkfile(cuid, cgid, &args, insecure, wrap);
