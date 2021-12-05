@@ -25,7 +25,7 @@
 - `D`:	Debug (print debugging output to stderr)
 - `E`:	-
 - `F`:	Filename (arg0 file portion)
-- `G`:	-
+- `G`:	allow unknown GID
 - `H`:	-
 - `I`:	Insecure (file can be owned by anybody)
 - `J`:	-
@@ -39,7 +39,7 @@
 - `R`:	Realpath (arg0 is the full path to the bin)
 - `S`:	allow ShellShock-attack
 - `T`:	allow TIOCSTI-attack (no setsid())
-- `U`:	-
+- `U`:	allow unknown UID
 - `V`:	-
 - `W`:	Wrap (pass script via FD to shell)
 - `X`:	-
