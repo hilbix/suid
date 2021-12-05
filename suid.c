@@ -467,9 +467,11 @@ main(int argc, char **argv)
   int			uid, gid, ouid, ogid, euid, egid;
   int			cuid, cgid;	/* which permission set to check for call	*/
   struct passwd		*pw;
+  struct group		*gr;
   int			i, minarg, maxarg, debug, suid_cmd, insecure, allow_shellshock;
   int			allow_tiocsti;
   int			wrap;		/* Flag W	*/
+  int			nogid, nouid;
   enum suid_type	suid_type;
   int			runfd;
   char			*orig;
@@ -540,12 +542,14 @@ main(int argc, char **argv)
    * early process optional flags, which are before min-max (flags must be sorted ABC):
    * Cmd/Filename/Next/Realpath defines how arg0 is set, default is what is in the config
    * Debug
+   * unknown Gid
    * Insecure
    * ShellShock
    * TIOCSTI
+   * unknown Uid
    * Wrap
    */
-  minmax = get_flags(&scan, minmax, "CDFINRSTW", &suid_cmd, &debug, &suid_cmd, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock, &allow_tiocsti, &wrap);
+  minmax = get_flags(&scan, minmax, "CDFGINRSTUW", &suid_cmd, &debug, &suid_cmd, &nogid, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock, &allow_tiocsti, &nouid, &wrap);
 
   /* get current settings	*/
   cwd	= getcwd(NULL, 0);
@@ -560,38 +564,44 @@ main(int argc, char **argv)
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process user
    */
+  uid	= -1;
   if (!*user)
-    pw	= getpwuid(euid);
+    pw	= getpwuid((uid_t)(uid = euid));
   else if (!strcmp(user, "*"))
-    pw	= getpwuid(ouid);
+    pw	= getpwuid((uid_t)(uid = ouid));
   else if (getint(user, &uid))
-    pw	= getpwuid(uid);
+    pw	= getpwuid((uid_t)uid);
   else
     pw	= getpwnam(user);
 
-  if (!pw)
+  if (pw)
+    uid	= pw->pw_uid;
+  else if (uid<0 || !nouid)
     OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "user", user, "not found", NULL);
-
-  uid	= pw->pw_uid;
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process group
    */
+  gid	= -1;
   if (!*group)
-    gid	= egid;
+    gr	= getgrgid((gid_t)(gid = egid));
   else if (!strcmp(group, "*"))
-    gid = ogid;
+    gr	= getgrgid((gid_t)(gid = ogid));
   else if (!strcmp(group, "="))
-    gid	= pw->pw_gid;
-  else if (!getint(group, &gid))
     {
-      struct group *gr;
-
-      gr	= getgrnam(group);
-      if (!gr)
-        OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "group", group, "not found", NULL);
-      gid	= gr->gr_gid;
+      if (!pw)
+        OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "user", user, "not found but group set to '='", NULL);
+      gr	= getgrgid((gid_t)(gid = pw->pw_gid));
     }
+  else if (getint(group, &gid))
+    gr	= getgrgid((gid_t)gid);
+  else
+    gr	= getgrnam(group);
+
+  if (gr)
+    gid	= gr->gr_gid;
+  else if (gid<0 || !nogid)
+    OOPS(scan.file, OOPS_I, scan.l.linenr, cmd, "group", group, "not found", NULL);
 
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process minmax (everything after flags)
