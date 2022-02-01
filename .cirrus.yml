@@ -10,5 +10,7 @@ make_task:
   preptest2_script: for a in '' 0 1; do cp linuxid /linuxid$a && chown 0:0 /linuxid$a && chmod 755 /linuxid$a || exit 1; done
   preptest3_script: chown 1:1 /linuxid1 && chmod +s /linuxid[01]
   preptest4_script: git clone https://github.com/hilbix/tinolib.git ../tinolib
-  test_script: make test
+  cirrus1_script: echo cirrus::1000:1000:GU-::/bin/bash > /etc/suid.conf.d/cirrus.conf
+  cirrus2_script: chown 1000:1000 .
+  test_script: suid cirrus -c 'make test'
 
