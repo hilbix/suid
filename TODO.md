@@ -19,9 +19,9 @@
 
 # Flags
 
-- `A`:	-
-- `B`:	-
-- `C`:	Cmd (arg0 is first arg to `suid`)
+- `A`:	- (proposed #17 pass env again)
+- `B`:	- (proposed #17 pass env without prefix)
+- `C`:	Cmd (arg0 given to cmd is first arg given to `suid`)
 - `D`:	Debug (print debugging output to stderr)
 - `E`:	-
 - `F`:	Filename (arg0 file portion)
@@ -40,7 +40,7 @@
 - `S`:	allow ShellShock-attack
 - `T`:	allow TIOCSTI-attack (no setsid())
 - `U`:	allow unknown UID
-- `V`:	-
+- `V`:	- (proposed #17 pass verification information via environment)
 - `W`:	Wrap (pass script via FD to shell)
 - `X`:	-
 - `Y`:	-
