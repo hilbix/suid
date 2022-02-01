@@ -507,6 +507,8 @@ main(int argc, char **argv)
            , NULL);
     }
 
+  if (!argv || !argv[0] || !*argv[0])
+    OOPS("weird environment, invocation name missing in arguments array", NULL);
   cmd = argv[1];
 #if 1	/* rly?	*/
   if (strchr(cmd, '/'))
