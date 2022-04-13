@@ -137,6 +137,7 @@ populate_env(struct args *env, int allow_shellshock, int uid, int gid, const cha
   /* populate SUID* variables	*/
   args_addf(env, "SUIDUID=%d", uid);
   args_addf(env, "SUIDGID=%d", gid);
+  args_addf(env, "SUIDPPID=%ld", (long)getppid());
   if (cwd && !shellshock(cwd))
     args_addf(env, "SUIDPWD=%s", cwd);
 
