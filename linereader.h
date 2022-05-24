@@ -48,7 +48,8 @@ linereader_end(struct linereader *l)
  * if (linereader_end(&l))
  *   error(errno);
  *
- * This OOPSes at:
+ * This no more OOPSes now.
+ * Instead it ERROR()s and sets l->err and returns EOF on following:
  * - Stray NUL
  * - Line too long
  * - too many loops (EINTR or broken reads)
@@ -87,7 +88,9 @@ linereader(struct linereader *l)
             return l->line = l->buf+tmp;	/* return line	*/
 
           case 0:
-            OOPS(l->name, OOPS_I, l->linenr+1, "contains stray NUL", NULL);
+            STDERR(l->name, OOPS_I, l->linenr+1, "contains stray NUL", NULL);
+	    l->err = EUCLEAN;		/* structure needs cleaning (due to NUL bytes)	*/
+	    return 0;
           }
 
       /* free no more needed buffer space */
@@ -102,7 +105,11 @@ linereader(struct linereader *l)
       /* l->pos == 0	*/
 
       if (l->fill >= sizeof l->buf)
-        OOPS(l->name, OOPS_I, l->linenr+1, "line too long", NULL);
+        {
+          STDERR(l->name, OOPS_I, l->linenr+1, "line too long", NULL);
+	  l->err = EOVERFLOW;
+	  return 0;
+	}
 
       if (l->eof)
         {
@@ -127,7 +134,8 @@ linereader(struct linereader *l)
       if (!tmp)
         l->eof = 1;
     }
-  OOPS(l->name, OOPS_I, l->linenr+1, "too many interrupts", NULL);
+  STDERR(l->name, OOPS_I, l->linenr+1, "too many interrupts", NULL);
+  l->err = EINTR;
   return 0;
 }
 

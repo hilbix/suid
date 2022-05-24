@@ -191,8 +191,11 @@ scan_file(struct scan *scan)
         break;
     }
   if (linereader_end(&scan->l))
-    OOPS(scan->file, OOPS_I, scan->l.linenr, "read error", NULL);
-  return scan->pos;	/* 0 on EOF, else position of password	*/
+    {
+      ERROR(scan->file, OOPS_I, scan->l.linenr, "read error", NULL);
+      return 0;
+    }
+  return scan->pos;	/* NULL on EOF, else position of password	*/
 }
 
 static int
