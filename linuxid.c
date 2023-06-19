@@ -24,6 +24,8 @@ main()
     if (!strncmp(line, "Uid:", 4) || !strncmp(line, "Gid:", 4))
       fputs(line, stdout);
   fclose(fd);
+  printf("eugid = %10d %10d\n", (int)geteuid(), (int)getegid());
+  printf("rugid = %10d %10d\n", (int)getuid(), (int)getgid());
   uid	= getuid();
   if (!seteuid(0)) printf("seteuid(0) worked\n");
   if (!seteuid(1)) printf("seteuid(1) worked\n");
