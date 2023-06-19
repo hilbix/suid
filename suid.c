@@ -290,6 +290,7 @@ enum suid_type
     TYPE_NORMAL,
     TYPE_SUID,	/* Call if it has SUID flags	*/
     TYPE_ROOT,	/* As TYPE_SUID, but with modified original UID/GID */
+    TYPE_TOOR,	/* As TYPE_ROOT, but with reversed real/effective ids	*/
     TYPE_SH,	/* /bin/sh does not support suid	*/
     TYPE_BASH,	/* As TYPE_SH, but supports modified arg0	*/
   };
@@ -306,6 +307,7 @@ modifier(struct args *args, enum suid_type type)
 
   if (     !strcmp(cmd, "suid"))	type	= TYPE_SUID;
   else if (!strcmp(cmd, "root"))	type	= TYPE_ROOT;
+  else if (!strcmp(cmd, "toor"))	type	= TYPE_TOOR;
   else if (!strcmp(cmd, "sh"  ))	type	= TYPE_SH;
   else if (!strcmp(cmd, "bash"))	type	= TYPE_BASH;
   else
@@ -662,9 +664,27 @@ main(int argc, char **argv)
     {
     default:	FATAL(suid_type);
 
+    case TYPE_TOOR:
+      if (!uid || !gid)
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "'drop:' needs nonprivileged user:group, not", OOPS_I, uid, OOPS_I, gid, NULL);
+      if (setgid(0))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot set root group priv", NULL);
+      if (setuid(0))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot set root user priv", NULL);
+      if (setegid(gid))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot change to group", OOPS_I, gid, NULL);
+      if (seteuid(uid))
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot change to user", OOPS_I, uid, NULL);
+      /* As the real UID is root, the process must be owned by root!
+       * (We should not trust the effective UID here)
+       */
+      cuid	= 0;
+      cgid	= 0;
+      break;
+
     case TYPE_ROOT:
       if (!uid || !gid)
-        OOPS(scan.file, OOPS_I, scan.l.linenr, "'root:' needs nonprivileged user/group, not", OOPS_I, uid, OOPS_I, gid, NULL);
+        OOPS(scan.file, OOPS_I, scan.l.linenr, "'root:' needs nonprivileged user:group, not", OOPS_I, uid, OOPS_I, gid, NULL);
       if (setregid(gid, egid))
         OOPS(scan.file, OOPS_I, scan.l.linenr, "cannot move to group", OOPS_I, gid, NULL);
       if (setreuid(uid, euid))
