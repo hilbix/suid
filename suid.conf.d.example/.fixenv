@@ -1,0 +1,14 @@
+#!/bin/bash
+
+[ 0 = "`id -u`" ] ||
+for a in "${!SUID_@}"
+do
+	case "$a" in
+	SUID_SUID*)	continue;;
+	esac
+	export "${a#SUID_}=${!a}"
+	unset "$a"
+done
+
+exec "$@"
+
