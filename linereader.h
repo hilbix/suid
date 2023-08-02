@@ -89,8 +89,8 @@ linereader(struct linereader *l)
 
           case 0:
             STDERR(l->name, OOPS_I, l->linenr+1, "contains stray NUL", NULL);
-	    l->err = EUCLEAN;		/* structure needs cleaning (due to NUL bytes)	*/
-	    return 0;
+            l->err = EILSEQ;		/* Illegal byte sequence	*/
+            return 0;
           }
 
       /* free no more needed buffer space */
@@ -107,9 +107,9 @@ linereader(struct linereader *l)
       if (l->fill >= sizeof l->buf)
         {
           STDERR(l->name, OOPS_I, l->linenr+1, "line too long", NULL);
-	  l->err = EOVERFLOW;
-	  return 0;
-	}
+          l->err = EOVERFLOW;
+          return 0;
+        }
 
       if (l->eof)
         {
