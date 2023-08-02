@@ -1,9 +1,6 @@
 make_task:
-  matrix:
-    - macos_instance:
-        image: ghcr.io/cirruslabs/macos-ventura-xcode:latest
-    - container:
-        image: gcc:latest
+  container:
+    image: gcc:latest
 
   prep_script: git submodule update --init --recursive
   compile_script: make
@@ -16,4 +13,11 @@ make_task:
   cirrus1_script: echo cirrus::1000:1000:GU-::/bin/bash > /etc/suid.conf.d/cirrus.conf
   cirrus2_script: chown 1000:1000 .
   test_script: suid cirrus -c 'make test'
+
+# I really have no idea how to run it on MacOS since my Mac-Mini died
+mac_task:
+  macos_instance:
+    image: ghcr.io/cirruslabs/macos-ventura-xcode:latest
+  prep_script: git submodule update --init --recursive
+  compile_script: make
 
