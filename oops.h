@@ -160,6 +160,7 @@ STDERR(const char *s, ...)
   va_end(list);
 }
 
+__attribute__((noreturn))
 static void
 OOPS(const char *bug, ...)
 {
