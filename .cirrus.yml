@@ -1,10 +1,10 @@
-matrix:
-  - osx_instance:
-      image: catalina-xcode
-  - container:
-      image: gcc:latest
-
 make_task:
+  matrix:
+    - osx_instance:
+        image: catalina-xcode
+    - container:
+        image: gcc:latest
+
   prep_script: git submodule update --init --recursive
   compile_script: make
   install_script: make install
