@@ -1,5 +1,8 @@
-container:
-  image: gcc:latest
+matrix:
+  - osx_instance:
+      image: catalina-xcode
+  - container:
+      image: gcc:latest
 
 make_task:
   prep_script: git submodule update --init --recursive
