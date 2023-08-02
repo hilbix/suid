@@ -838,9 +838,15 @@ main(int argc, char **argv)
     setsid();	/* fails if we are already session leader	*/
 
   /* invoke command	*/
+#ifndef __APPLE__
   fexecve(runfd, args.args, env.args);
   OOPS(errno==ENOENT ? "fexecve() failed (missing W flag?)" : "fexecve() failed",
        args.args[0], NULL);
+#else
+  close(runfd);
+  execve(args.args[0], args.args, env.args);
+  OOPS("execve() failed", args.args[0], NULL);
+#endif
   return 127;	/* resemble shell	*/
 }
 
