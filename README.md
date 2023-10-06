@@ -224,3 +224,8 @@ But then you apparently know what you are doing.
   - Note that there is no flag to switch back to the previous handling of those modifiers.  `:bash:` and `:sh:` were ridiculously broken, while the old `:root:` behavior can be gained by wrapping the command into `/bin/bash` or similar (as the shell is owned by root, `suid` cannot detect any permission problem on what the shell does).
   - Note that the use of `:sh:` and `:bash:` improve security, because `suid` is able to test the permissions of both, the script and the shell this way.  So instead you wrapping it into the shell, just use the script directly and use the modifier.
 
+- Version 3.2.0 might be affected by [CVE-2023-4911](https://security-tracker.debian.org/tracker/CVE-2023-4911) if statically linked
+  - Dynamically linked versions (the default) are believed to be not affected anymore after `glibc` is updated
+  - However there is a `make static` target in `Makefile` and some people might accidentally be able to use that
+  - To mitigate this, only dynamically linked versions or versions above 3.3.0 should be used
+  - At the time of writing, 3.2.0 is the latest (stable) version.  Urgency at my side is low as only (uncommon) statically compiled versions are affected.
