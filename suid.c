@@ -11,6 +11,9 @@
 #include "linereader.h"
 #include "args.h"
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <dirent.h>
 #include <pwd.h>
 #include <grp.h>
@@ -482,6 +485,7 @@ main(int argc, char **argv)
   int			runfd;
   char			*orig;
   char			*exe;
+  int			keepgroups;
 
   if (argc<2)
     {
@@ -493,9 +497,9 @@ main(int argc, char **argv)
            "\tcommand:pw:user:grp:minmax:dir:/path/to/bin:args..\n"
            "\tpw:       currently must be empty\n"
            "\tuser/grp: '' (suid) * (caller) = (gid of user)\n"
-           "\tminmax:   [CDFINRSTW][minargs][-[maxargs]]\n"
+           "\tminmax:   [CDFIKNRSTW][minargs][-[maxargs]]\n"
            "\t          Cmd/Filename/Next/Realpath is arg0, other flags:\n"
-           "\t          Debug/Insecure/ShellShock/TIOCSTI/Wrap\n"
+           "\t          Debug/Insecure/Keep/ShellShock/TIOCSTI/Wrap\n"
            "\targs..:   optional list of ':' separated args\n"
            "\t          '\\:' escapes ':', '\\\\:' is swallowed\n"
            "\t          (Use '\\\\:' to disambiguate)\n"
@@ -557,7 +561,7 @@ main(int argc, char **argv)
    * unknown Uid
    * Wrap
    */
-  minmax = get_flags(&scan, minmax, "CDFGINRSTUW", &suid_cmd, &debug, &suid_cmd, &nogid, &insecure, &suid_cmd, &suid_cmd, &allow_shellshock, &allow_tiocsti, &nouid, &wrap);
+  minmax = get_flags(&scan, minmax, "CDFGIKNRSTUW", &suid_cmd, &debug, &suid_cmd, &nogid, &insecure, &keepgroups, &suid_cmd, &suid_cmd, &allow_shellshock, &allow_tiocsti, &nouid, &wrap);
 
   /* get current settings	*/
   cwd	= getcwd(NULL, 0);
@@ -569,6 +573,11 @@ main(int argc, char **argv)
   euid	= geteuid();
   egid	= getegid();
 
+  if (!keepgroups)
+    {
+      gid_t dummy;
+      setgroups((size_t)0, &dummy);
+    }
   /* command:pw:user:group:minmax:dir:/path/to/binary:args..
    * process user
    */
