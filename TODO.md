@@ -29,7 +29,7 @@
 - `H`:	-
 - `I`:	Insecure (file can be owned by anybody)
 - `J`:	-
-- `K`:	-
+- `K`:	Keep groups (behavior until V3.3)
 - `L`:	-
 - `M`:	-
 - `N`:	Next (arg0 is sandwiched before arg1)
