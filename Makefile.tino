@@ -59,3 +59,10 @@ install::
 	if [ -f '/etc/$(CONF)' ]; then install --backup=t --compare -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
 	install --backup=t --compare -m644 -o0 -g0 -t/etc/suid.conf.d/ suid.conf.d.example/*.ex
 
+static::
+	echo "Better consider 'make musl'"
+
+diet::
+	echo "'make diet' is known to fail, use 'make musl'"
+	exit 1
+
