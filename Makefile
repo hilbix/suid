@@ -1,7 +1,7 @@
 # Makefile automatically generated, do not edit!
 # This output (only this Makefile) is Public Domain.
 #
-#@MD5TINOIGN@ Creation date: Wed Jan 16 16:08:11 CET 2019
+#@MD5TINOIGN@ Creation date: Fri Jan  9 06:05:18 CET 2026
 #
 # This file is based on following files:
 #@MD5TINOIGN@ 1: Makefile.tino
@@ -61,7 +61,7 @@ STD_LDFLAGS=
 
      CFLAGS=$(DBG_FLAGS) $(DBG_CFLAGS) $(STD_CFLAGS) $(ADD_CFLAGS) -I"$(HERE)"
    CXXFLAGS=$(DBG_CCFLAGS) $(STD_CCFLAGS) $(ADD_CCFLAGS) -I"$(HERE)"
-    LDFLAGS=$(DBG_LDFLAGS) $(STD_LDFLAGS) $(ADD_LDFLAGS)
+    LDFLAGS=$(DBG_LDFLAGS) $(STD_LDFLAGS) $(ADD_LDFLAGS) $(STATIC_LDFLAGS)
      LDLIBS=$(DBG_LDLIBS) $(STD_LDLIBS) $(ADD_LDLIBS)
 
 VERSIONFILE=$(PROG1)_version
@@ -85,22 +85,39 @@ VERSIONNAME=$(VERSIONFILE)
 
   PROGS_EXE=			\
 		$(PROG1).exe	\
+		$(PROG1).static.exe	\
+		$(PROG1).musl.exe	\
 
-.PHONY: all static install it clean distclean dist tar diff always
+# Semi-automatically generated for "make static"
+
+  PROGS_STATIC=			\
+		$(PROG1).static	\
+
+# Semi-automatically generated for "make musl"
+
+  PROGS_MUSL=			\
+		$(PROG1).musl	\
+
+.PHONY: all diet musl static install it clean distclean dist tar diff always
 
 # Targets considered to work for all systems with GNU MAKE and GNU AWK
 
 all::	$(SUBDIRS) $(PROGS)
 
-test::	all Tests
+static:: $(SUBDIRS) $(PROGS_STATIC)
+
+test:;	all Tests
 	$(PWD)/tino/Makefile-tests.sh Tests
+# This needs musl-tools installed
 
-# To use this you need to do:
-#	ln -s tinolib/diet .
-#	make static
-# This is experimental.
+musl::	$(SUBDIRS) $(PROGS_MUSL)
 
-static::
+# This needs dietlibc-dev to be installed.
+# However 'make static' or 'make musl' may be a better choice,
+# as this only works for sources which are prepared for this.
+# Hence there is the option to tweak things using a directory diet/
+
+diet::
 	[ -f diet.distignore~ ] || $(MAKE) clean
 	$(TOUCH) diet.distignore~
 	[ ! -d diet ] || $(MAKE) -C diet diet
@@ -138,29 +155,29 @@ install::
 # Special targets considered to work for all unix like systems
 # like CygWin
 
-it::	all
+it:	all
 	[ ".$(PWD)" != ".$(HERE)" ] || [ -f VERSION ] || \
 	{ UP="`dirname "$(HERE)"`"; $(MAKE) -C"$$UP" it HERE="$$UP"; }
 
-clean::
+clean:
 	$(RM) *.o *.d *~ .*~ */*~ $(CLEAN)
 	-$(MAKE) -C tino clean HERE="$(HERE)"
 
-distclean::	clean
-	$(RM) "$(VERSIONFILE).h" $(PROGS) $(PROGS_EXE) $(DISTCLEAN)
+distclean:	clean
+	$(RM) "$(VERSIONFILE).h" $(PROGS) $(PROGS_STATIC) $(PROGS_MUSL) $(PROGS_EXE) $(DISTCLEAN)
 	$(RM) core core.* .#*
 	-$(MAKE) -C tino distclean HERE="$(HERE)"
 
 # Special targets in presence of tinolib
 # (subdirectory tino)
 
-dist::	distclean
+dist:	distclean
 	-$(MAKE) -C tino dist HERE="$(HERE)" DEBUGS="$(DBG_CFLAGS)$(DBG_LDFLAGS)$(DBG_LDLIBS)"
 
-tar::	distclean
+tar:	distclean
 	-$(MAKE) -C tino tar HERE="$(HERE)"
 
-diff::
+diff:
 	-$(MAKE) -C tino diff HERE="$(HERE)"
 
 # Automatically generated from $(SUBDIRS):
@@ -168,6 +185,13 @@ diff::
 # automatically generated dependencies
 $(PROG1).o:	$(COMMON)
 $(PROG1):	$(PROG1).o $(OBJS) $(LIBS)
+$(PROG1).static:	$(PROG1).o $(OBJS) $(LIBS)
+	$(CC) -static $< -o $(PROG1).static
+	$(STRIP) $(PROG1).static
+
+$(PROG1).musl:	$(PROG1).o $(OBJS) $(LIBS)
+	musl-gcc -static $< -o $(PROG1).musl
+	$(STRIP) $(PROG1).musl
 
 # compiler generated dependencies, remove if incorrect
 
@@ -183,4 +207,11 @@ install::
 	chmod 6555 $(INSTALLPATH)/bin/suid
 	if [ -f '/etc/$(CONF)' ]; then install --backup=t --compare -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF).dist'; else install -m644 -o0 -g0 '$(CONF)' '/etc/$(CONF)'; fi
 	install --backup=t --compare -m644 -o0 -g0 -t/etc/suid.conf.d/ suid.conf.d.example/*.ex
+
+static::
+	echo "Better consider 'make musl'"
+
+diet::
+	echo "'make diet' is known to fail, use 'make musl'"
+	exit 1
 # end
