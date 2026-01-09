@@ -6,4 +6,7 @@
 /.gitcarry
 /COVERITY/
 /linuxid
+/ns_show
 /suid
+/suid.static
+/suid.musl
