@@ -5,12 +5,13 @@
  * see file COPYRIGHT.CLL.  USE AT OWN RISK, ABSOLUTELY NO WARRANTY.
  */
 
-#define	_GNU_SOURCE
+#define	_DEFAULT_SOURCE
 #define	OOPS_FAIL	126
 
 #include "linereader.h"
 #include "args.h"
 
+#include <strings.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -124,6 +125,8 @@ shellshock(const char *s)
 {
   return !memcmp(s, SHELLSHOCK, sizeof SHELLSHOCK-1);
 }
+
+extern char **	environ;
 
 /* Prepare SUID environment
  */
@@ -468,7 +471,7 @@ insecure_return:
 /* This routine is too long
  */
 int
-main(int argc, char **argv)
+main(int argc, char **argv, char **envp)
 {
   struct scan		scan = { 0 };
   struct args		args = { 0 }, env = { 0 };
@@ -502,7 +505,7 @@ main(int argc, char **argv)
            "\t          Debug/Insecure/Keep/ShellShock/TIOCSTI/Wrap\n"
            "\targs..:   optional list of ':' separated args\n"
            "\t          '\\:' escapes ':', '\\\\:' is swallowed\n"
-           "\t          (Use '\\\\:' to disambiguate)\n"
+           "\t          (Use '\\\\\\:\\:' to disambiguate '\\:')\n"
            "\n"
            "\t'suid:' before '/path/to/bin' for suid-capable bin.\n"
            "\t'root:' to call as root and drop to the given user.\n"
@@ -519,6 +522,9 @@ main(int argc, char **argv)
 
   if (!argv || !argv[0] || !*argv[0])
     OOPS("weird environment, invocation name missing in arguments array", NULL);
+  if (environ != envp)
+    OOPS("weird environment, main(, envp) != environ", NULL);
+
   cmd = argv[1];
 #if 1	/* rly?	*/
   if (strchr(cmd, '/'))
