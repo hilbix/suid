@@ -19,4 +19,4 @@ If not, this either is a implementation bug or some documentation flaw.  Both mu
 If you find any security related issue, please open an Issue on GH.
 
 If you send PRs, please remove all Copyrights first
-(see License( else I cannot merge.
+(see License) else I cannot merge.
