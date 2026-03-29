@@ -106,7 +106,7 @@ all::	$(SUBDIRS) $(PROGS)
 
 static:: $(SUBDIRS) $(PROGS_STATIC)
 
-test:;	all Tests
+test::	all Tests
 	$(PWD)/tino/Makefile-tests.sh Tests
 # This needs musl-tools installed
 
