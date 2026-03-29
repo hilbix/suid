@@ -229,3 +229,10 @@ But then you apparently know what you are doing.
   - However there is a `make static` target in `Makefile` and some people might accidentally be able to use that
   - To mitigate this, only dynamically linked versions or versions above 3.3.0 should be used
   - At the time of writing, 3.2.0 is the latest (stable) version.  Urgency at my side is low as only (uncommon) statically compiled versions are affected.
+
+- Version 4.0.0 now removes secondary groups by default (which might break existing setups)
+  - To keep the groups, add `K` flag
+  - `make musl` to create a very compact static version
+  - `make static` builds something way bigger
+  - Example sizes (x86-64): 32k=dynamic(stripped) 79k=dynamic(unstripped) 80k=musl(stripped) 906k=static(stripped)
+
