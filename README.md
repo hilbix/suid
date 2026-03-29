@@ -234,5 +234,9 @@ But then you apparently know what you are doing.
   - To keep the groups, add `K` flag
   - `make musl` to create a very compact static version
   - `make static` builds something way bigger
-  - Example sizes (x86-64): 32k=dynamic(stripped) 79k=dynamic(unstripped) 80k=musl(stripped) 906k=static(stripped)
+  - Example sizes (x86-64):  
+    32k=dynamic(stripped)  
+    79k=dynamic(unstripped)  
+    80k=musl(stripped)  
+    906k=static(stripped)
 
